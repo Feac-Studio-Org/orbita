@@ -9,7 +9,7 @@ Plataforma de FEAC Estudio: proyectos (tablero, backlog, épicas, documentos), c
 ## Publicar en Vercel
 
 1. En Vercel: **Add New → Project → Import** este repositorio. Framework: Next.js. No hay que cambiar nada más: la URL y la clave pública de Supabase ya vienen en `.env.production`.
-2. Cuando Vercel te dé la dirección (por ejemplo `https://orbita-feac.vercel.app`), ve a Supabase → **Authentication → URL Configuration**:
+2. Cuando Vercel te dé la dirección (hoy: `https://orbita-feac.vercel.app`), ve a Supabase → **Authentication → URL Configuration**:
    - **Site URL**: la dirección de Vercel.
    - **Redirect URLs**: agrega `https://<tu-dirección>/auth/confirmar`.
 3. Entra a la dirección, crea tu cuenta y confirma el correo.
