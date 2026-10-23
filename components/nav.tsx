@@ -7,12 +7,12 @@ import { Icon, type IconName } from './icons';
 type NavProject = { key: string; name: string; color: string };
 type NavSpace = { id: string; name: string; kind: string; roleLabel: string; isOwner: boolean; portfolio: boolean; members: boolean; projects: NavProject[] };
 type Props = {
-  name: string; initial: string; spaces: NavSpace[];
+  name: string; initial: string; avatarUrl?: string | null; spaces: NavSpace[];
   modules: { messages: boolean; finance: boolean; assistant: boolean; calendar: boolean; bases: boolean };
   unread: number;
 };
 
-export function Sidebar({ name, initial, spaces, modules, unread }: Props) {
+export function Sidebar({ name, initial, avatarUrl, spaces, modules, unread }: Props) {
   const path = usePathname();
   const search = useSearchParams();
   const [open, setOpen] = useState(false);
@@ -55,9 +55,9 @@ export function Sidebar({ name, initial, spaces, modules, unread }: Props) {
 
   return (
     <aside className={'side' + (open ? ' open' : '')} id="side" aria-label="Navegación">
-      <Link href="/" className="brand"><img src="/logo.webp" alt="" /><b>Órbita</b></Link>
+      <Link href="/" className="brand"><img src="/logo.png" alt="" /><b>Órbita</b></Link>
       <Link href="/perfil" className="me">
-        <span className="avatar">{initial}</span>
+        {avatarUrl ? <img src={avatarUrl} alt="" style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover', flex: 'none' }} /> : <span className="avatar">{initial}</span>}
         <div style={{ minWidth: 0 }}><b>{name}</b><span>{spaces.length} espacios · ver perfil</span></div>
       </Link>
       <nav className="navgroup">

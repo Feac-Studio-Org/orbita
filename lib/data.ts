@@ -21,7 +21,7 @@ export type Issue = {
 export const getContext = cache(async () => {
   const { supabase, user } = await requireUser();
   const [{ data: profile }, { data: members }, { data: projects }] = await Promise.all([
-    supabase.from('profiles').select('id, full_name, timezone, modules, preferences').eq('id', user.id).single(),
+    supabase.from('profiles').select('id, full_name, timezone, modules, preferences, avatar_url').eq('id', user.id).single(),
     supabase.from('space_members').select('role, position, spaces (id, name, kind, description, modules, created_at)').eq('user_id', user.id),
     supabase.from('projects').select('id, key, name, description, color, status_label, repo, repo_url, space_id, position, finance_separate').is('archived_at', null).order('position'),
   ]);

@@ -14,6 +14,7 @@ const P = {
   menu: <path d="M2 4h12M2 8h12M2 12h12" />,
   out: <path d="M6 2.5H3.5v11H6M10 5l3 3-3 3M13 8H6" />,
   chev: <path d="m4 6 4 4 4-4" />,
+  search: <><circle cx="7" cy="7" r="4.5" /><path d="m10.5 10.5 3 3" /></>,
 };
 export type IconName = keyof typeof P;
 

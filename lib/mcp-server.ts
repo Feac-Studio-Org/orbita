@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { TOOLS } from './mcp-tools';
+import { CORS } from './oauth';
 
 // Servidor MCP por HTTP (transporte "Streamable HTTP", sin estado y con respuestas JSON).
 const VERSIONS = ['2025-06-18', '2025-03-26', '2024-11-05'];
@@ -18,6 +19,8 @@ async function rpc(fn: string, args: Record<string, unknown>) {
   if (!r.ok) throw new Error(body?.message ?? `Error ${r.status}`);
   return body;
 }
+
+class Unauthorized extends Error {}
 
 async function handle(m: Msg, token: string | null) {
   const ok = (result: unknown) => ({ jsonrpc: '2.0', id: m.id ?? null, result });
@@ -41,6 +44,7 @@ async function handle(m: Msg, token: string | null) {
         const data = await rpc(tool.rpc, { p_token: token, ...tool.args(m.params?.arguments ?? {}) });
         return ok({ content: [{ type: 'text', text: JSON.stringify(data, null, 2) }], structuredContent: Array.isArray(data) ? { items: data } : data });
       } catch (e) {
+        if ((e as Error).message.includes('token no válido')) throw new Unauthorized();
         return ok({ isError: true, content: [{ type: 'text', text: (e as Error).message }] });
       }
     }
@@ -50,17 +54,35 @@ async function handle(m: Msg, token: string | null) {
   }
 }
 
+/** 401 con la dirección de los metadatos OAuth: así Claude, ChatGPT y otros inician el inicio de sesión solos. */
+function unauthorized(request: NextRequest) {
+  const origin = request.nextUrl.origin;
+  return NextResponse.json({ jsonrpc: '2.0', id: null, error: { code: -32001, message: 'Inicia sesión en Órbita para usar este conector.' } }, {
+    status: 401,
+    headers: { ...CORS, 'Access-Control-Expose-Headers': 'WWW-Authenticate', 'WWW-Authenticate': `Bearer realm="orbita", resource_metadata="${origin}/.well-known/oauth-protected-resource"` },
+  });
+}
+
 export async function mcpPost(request: NextRequest, pathToken: string | null) {
   const auth = request.headers.get('authorization');
   const token = pathToken ?? (auth?.toLowerCase().startsWith('bearer ') ? auth.slice(7).trim() : null);
+  if (!token) return unauthorized(request);
   let body: Msg | Msg[];
-  try { body = await request.json(); } catch { return NextResponse.json({ jsonrpc: '2.0', id: null, error: { code: -32700, message: 'JSON no válido' } }, { status: 400 }); }
+  try { body = await request.json(); } catch { return NextResponse.json({ jsonrpc: '2.0', id: null, error: { code: -32700, message: 'JSON no válido' } }, { status: 400, headers: CORS }); }
   const list = Array.isArray(body) ? body : [body];
-  const out = (await Promise.all(list.map((m) => handle(m, token)))).filter(Boolean);
-  if (!out.length) return new NextResponse(null, { status: 202 });
-  return NextResponse.json(Array.isArray(body) ? out : out[0], { headers: { 'Cache-Control': 'no-store' } });
+  let out: unknown[];
+  try {
+    out = (await Promise.all(list.map((m) => handle(m, token)))).filter(Boolean);
+  } catch (e) {
+    if (e instanceof Unauthorized) return unauthorized(request);
+    throw e;
+  }
+  if (!out.length) return new NextResponse(null, { status: 202, headers: CORS });
+  return NextResponse.json(Array.isArray(body) ? out : out[0], { headers: { ...CORS, 'Cache-Control': 'no-store' } });
 }
 
 export function mcpGet() {
-  return new NextResponse('Este servidor MCP responde por POST.', { status: 405, headers: { Allow: 'POST' } });
+  return new NextResponse('Este servidor MCP responde por POST.', { status: 405, headers: { ...CORS, Allow: 'POST' } });
 }
+
+export const mcpOptions = () => new NextResponse(null, { status: 204, headers: { ...CORS, 'Access-Control-Expose-Headers': 'WWW-Authenticate' } });

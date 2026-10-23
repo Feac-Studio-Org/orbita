@@ -28,13 +28,19 @@ export default async function Assistant({ searchParams }: { searchParams: Promis
       {sp.error && <p className="err" role="alert">{sp.error}</p>}
       <div className="grid g-home">
         <section className="panel">
-          <div className="panel-head"><h2>Conectar tu IA</h2></div>
-          <ol style={{ paddingLeft: 20, display: 'flex', flexDirection: 'column', gap: 10, fontSize: 13.5 }}>
-            <li>Genera un token abajo. Te da una dirección con el token incluido.</li>
-            <li>En tu IA, busca la opción para agregar un conector o servidor MCP remoto y pega esa dirección. El nombre del menú cambia según la app (en Claude: Ajustes → Conectores → Agregar conector personalizado).</li>
-            <li>Prueba con: «¿qué tengo pendiente hoy?» o «registra que terminé GG-6».</li>
-          </ol>
-          <TokenForm origin={origin} />
+          <div className="panel-head"><h2>Conectar tu IA</h2><span className="label">Recomendado</span></div>
+          <p className="muted" style={{ fontSize: 13.5 }}>Pega esta dirección como conector o servidor MCP en tu IA. Te pedirá entrar a Órbita y permitir el acceso; no hay que copiar tokens.</p>
+          <input className="inp mono" readOnly value={`${origin}/api/mcp`} aria-label="Dirección del servidor MCP" />
+          <div className="list" style={{ fontSize: 13.5 }}>
+            <div className="row" style={{ gridTemplateColumns: '110px minmax(0,1fr)' }}><b>Claude</b><span>claude.ai → Ajustes → Conectores → Agregar conector personalizado. Queda también en la app del celular, con voz.</span></div>
+            <div className="row" style={{ gridTemplateColumns: '110px minmax(0,1fr)' }}><b>ChatGPT</b><span>Ajustes → Aplicaciones y conectores → Avanzado → Modo desarrollador → Crear. Autenticación: OAuth.</span></div>
+            <div className="row" style={{ gridTemplateColumns: '110px minmax(0,1fr)' }}><b>Claude Code</b><span className="mono" style={{ fontSize: 12 }}>claude mcp add --transport http --scope user orbita {origin}/api/mcp</span></div>
+            <div className="row" style={{ gridTemplateColumns: '110px minmax(0,1fr)' }}><b>Otras</b><span>Cualquier cliente MCP con transporte HTTP y OAuth. Si solo acepta una URL fija, usa un token personal.</span></div>
+          </div>
+          <details className="add">
+            <summary className="link">Usar un token personal en lugar de OAuth</summary>
+            <TokenForm origin={origin} />
+          </details>
         </section>
         <form className="panel form" action={savePermissions}>
           <div className="panel-head"><h2>Qué puede ver y hacer</h2></div>
@@ -50,7 +56,7 @@ export default async function Assistant({ searchParams }: { searchParams: Promis
       </div>
       <div className="grid g-2">
         <section className="panel">
-          <div className="panel-head"><h2>Tokens</h2></div>
+          <div className="panel-head"><h2>IAs conectadas</h2><span className="label">Revoca para desconectar</span></div>
           {tokens?.length ? <div className="list">{tokens.map((t) => (
             <div className="row" key={t.id} style={{ gridTemplateColumns: 'minmax(0,1fr) auto' }}>
               <div className="t"><b>{t.name}</b><span className="mono">orb_…{t.last4} · {t.revoked_at ? 'revocado' : t.last_used_at ? 'usado ' + t.last_used_at.slice(0, 10) : 'sin usar'}</span></div>

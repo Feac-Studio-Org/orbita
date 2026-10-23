@@ -1,7 +1,7 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
-const PUBLIC = ['/login', '/auth', '/api/mcp', '/api/google/callback', '/descargas'];
+const PUBLIC = ['/login', '/auth', '/api/mcp', '/api/google/callback', '/descargas', '/.well-known', '/api/oauth'];
 
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -21,11 +21,12 @@ export async function proxy(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = '/login';
     url.search = '';
+    if (path !== '/') url.searchParams.set('next', path + request.nextUrl.search);
     return NextResponse.redirect(url);
   }
   return response;
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|icon.png|apple-icon.png|logo.webp|icon-192.png|icon-512.png|manifest.webmanifest).*)'],
+  matcher: ['/((?!_next/static|_next/image|icon.png|apple-icon.png|logo.png|icon-192.png|icon-512.png|manifest.webmanifest).*)'],
 };

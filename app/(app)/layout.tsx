@@ -16,12 +16,17 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     <div className="app">
       <Suspense>
-        <Sidebar name={name} initial={initial(name)} spaces={navSpaces} modules={modules} unread={count ?? 0} />
+        <Sidebar name={name} initial={initial(name)} avatarUrl={profile?.avatar_url} spaces={navSpaces} modules={modules} unread={count ?? 0} />
       </Suspense>
       <div className="main">
         <header className="top">
           <button className="menu-btn" id="menuBtn" aria-label="Abrir navegación"><Icon name="menu" className="" /></button>
-          <div className="crumbs" id="crumbs"><b>Órbita</b></div>
+          <form action="/buscar" className="search-box" role="search">
+            <Icon name="search" size={14} className="" />
+            <input name="q" placeholder="Buscar tareas, proyectos y documentos" aria-label="Buscar" />
+          </form>
+          <div style={{ flex: 1 }} />
+          <a href="/notificaciones" className="icon-link" aria-label={`Notificaciones${count ? `: ${count} sin leer` : ''}`}><Icon name="bell" className="" />{!!count && <span className="dot-badge" />}</a>
           <form action="/auth/salir" method="post"><button className="pill mini" type="submit" title="Cerrar sesión"><Icon name="out" size={14} className="" />Salir</button></form>
         </header>
         <main className="content">{children}</main>

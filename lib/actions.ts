@@ -312,3 +312,56 @@ export async function addProperty(f: FormData) {
   await supabase.from('user_databases').update({ properties: props }).eq('id', s(f, 'db'));
   redirect(`/personal/bases?db=${s(f, 'db')}`);
 }
+
+/* ---------- Llamadas (Jitsi Meet, sin claves ni costo) ---------- */
+export async function startCall(f: FormData) {
+  const { supabase, user } = await requireUser();
+  const channel = s(f, 'channel');
+  const { data, error } = await supabase.from('calls').insert({ channel_id: channel, started_by: user.id }).select('id').single();
+  if (error) back(`/mensajes?canal=${channel}`, 'No se pudo iniciar la llamada: ' + error.message);
+  await supabase.from('messages').insert({ channel_id: channel, author_id: user.id, body: 'Inició una llamada.' });
+  revalidatePath('/mensajes');
+  redirect(`/mensajes?canal=${channel}&llamada=${data!.id}`);
+}
+
+export async function endCall(f: FormData) {
+  const { supabase } = await requireUser();
+  await supabase.from('calls').update({ ended_at: new Date().toISOString() }).eq('id', s(f, 'id'));
+  revalidatePath('/mensajes');
+  redirect(`/mensajes?canal=${s(f, 'channel')}`);
+}
+
+/* ---------- Foto de perfil ---------- */
+export async function saveAvatar(f: FormData) {
+  const { supabase, user } = await requireUser();
+  const file = f.get('foto');
+  if (!(file instanceof File) || !file.size) back('/perfil', 'Elige una foto.');
+  const img = file as File;
+  if (!['image/jpeg', 'image/png', 'image/webp'].includes(img.type)) back('/perfil', 'La foto debe ser JPG, PNG o WebP.');
+  if (img.size > 3 * 1024 * 1024) back('/perfil', 'La foto debe pesar menos de 3 MB.');
+  const ext = img.type === 'image/png' ? 'png' : img.type === 'image/webp' ? 'webp' : 'jpg';
+  const path = `${user.id}/avatar-${Date.now()}.${ext}`;
+  const { error } = await supabase.storage.from('avatars').upload(path, img, { contentType: img.type, upsert: true });
+  if (error) back('/perfil', 'No se pudo subir la foto: ' + error.message);
+  const { data } = supabase.storage.from('avatars').getPublicUrl(path);
+  await supabase.from('profiles').update({ avatar_url: data.publicUrl }).eq('id', user.id);
+  revalidatePath('/', 'layout');
+  redirect('/perfil?ok=' + encodeURIComponent('Foto actualizada.'));
+}
+
+/* ---------- Preferencias de avisos ---------- */
+export async function saveNotificationPrefs(f: FormData) {
+  const { supabase, user } = await requireUser();
+  const kinds = f.getAll('kind').map(String);
+  const rows = kinds.map((k) => ({ user_id: user.id, kind: k, in_app: f.get(`app:${k}`) === 'on', push: f.get(`push:${k}`) === 'on', email: false }));
+  await supabase.from('notification_prefs').upsert(rows);
+  redirect('/notificaciones?ok=' + encodeURIComponent('Preferencias guardadas.'));
+}
+
+export async function openNotification(f: FormData) {
+  const { supabase } = await requireUser();
+  await supabase.from('notifications').update({ read_at: new Date().toISOString() }).eq('id', s(f, 'id'));
+  revalidatePath('/', 'layout');
+  const href = s(f, 'href');
+  redirect(href.startsWith('/') && !href.startsWith('//') ? href : '/notificaciones');
+}

@@ -1,20 +1,22 @@
 import Link from 'next/link';
 import { getContext } from '@/lib/data';
-import { ROLE, initial } from '@/lib/format';
+import { ROLE } from '@/lib/format';
 import { ViewHead } from '@/components/bits';
-import { saveProfile } from '@/lib/actions';
+import { saveAvatar, saveProfile } from '@/lib/actions';
+import { Avatar } from '@/components/avatar';
 
 export const metadata = { title: 'Perfil' };
 
-export default async function Profile({ searchParams }: { searchParams: Promise<{ ok?: string }> }) {
-  const { ok } = await searchParams;
+export default async function Profile({ searchParams }: { searchParams: Promise<{ ok?: string; error?: string }> }) {
+  const { ok, error } = await searchParams;
   const { user, profile, spaces } = await getContext();
   return (
     <>
       <ViewHead label="Perfil" title={profile?.full_name || 'Tu perfil'} text={`${user.email} · ${profile?.timezone ?? 'America/Bogota'}`}>
-        <span className="avatar" style={{ width: 64, height: 64, fontSize: 24 }}>{initial(profile?.full_name)}</span>
+        <Avatar name={profile?.full_name} url={profile?.avatar_url} size={72} />
       </ViewHead>
       {ok && <p className="ok-msg" role="status">{ok}</p>}
+      {error && <p className="err" role="alert">{error}</p>}
       <div className="grid g-home">
         <section className="panel">
           <div className="panel-head"><h2>Mis espacios</h2><Link className="link" href="/nuevo/espacio">Crear o unirse</Link></div>
@@ -33,6 +35,12 @@ export default async function Profile({ searchParams }: { searchParams: Promise<
           <label className="field">Nombre<input name="full_name" defaultValue={profile?.full_name ?? ''} required /></label>
           <label className="field">Correo<input value={user.email ?? ''} readOnly disabled /></label>
           <button className="pill solid" type="submit" style={{ alignSelf: 'flex-start' }}>Guardar</button>
+        </form>
+        <form className="panel form" action={saveAvatar}>
+          <div className="panel-head"><h2>Foto de perfil</h2></div>
+          <div className="inline"><Avatar name={profile?.full_name} url={profile?.avatar_url} size={56} /><input className="inp" type="file" name="foto" accept="image/jpeg,image/png,image/webp" required /></div>
+          <p className="note">JPG, PNG o WebP de hasta 3 MB.</p>
+          <button className="pill" type="submit" style={{ alignSelf: 'flex-start' }}>Subir foto</button>
         </form>
       </div>
     </>
