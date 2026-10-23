@@ -80,7 +80,7 @@ details.space > summary .role { margin-left: auto; font-size: 10.5px; }
 .crumbs { display: flex; gap: 8px; align-items: center; font-size: 13.5px; color: var(--mute); min-width: 0; margin-right: auto; }
 .crumbs b { color: var(--paper); font-weight: 500; }
 .menu-btn { display: none; }
-.content { padding: 36px 32px 64px; display: flex; flex-direction: column; gap: 22px; max-width: 1280px; width: 100%; }
+.content { padding: 32px clamp(20px, 2.6vw, 48px) 64px; display: flex; flex-direction: column; gap: 22px; width: 100%; }
 
 .search-box { display: flex; align-items: center; gap: 8px; padding: 7px 12px; border: 1px solid var(--line-2); border-radius: 99px; background: var(--ink-2); color: var(--mute); width: min(420px, 100%); transition: border-color .2s; }
 .search-box:focus-within { border-color: var(--violet); }

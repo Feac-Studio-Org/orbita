@@ -1,7 +1,7 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
-const PUBLIC = ['/login', '/auth', '/api/mcp', '/api/google/callback', '/descargas', '/.well-known', '/api/oauth'];
+const PUBLIC = ['/login', '/auth', '/api/mcp', '/api/google/callback', '/descargas', '/.well-known', '/api/oauth', '/bienvenida'];
 
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -17,6 +17,11 @@ export async function proxy(request: NextRequest) {
   });
   const { data } = await supabase.auth.getUser();
   const path = request.nextUrl.pathname;
+  if (!data.user && path === '/') {
+    const url = request.nextUrl.clone();
+    url.pathname = '/bienvenida';
+    return NextResponse.rewrite(url);
+  }
   if (!data.user && !PUBLIC.some((p) => path.startsWith(p))) {
     const url = request.nextUrl.clone();
     url.pathname = '/login';
