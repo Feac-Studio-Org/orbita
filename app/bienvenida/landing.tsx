@@ -198,7 +198,6 @@ export function Landing() {
             <div className="ring r3"><i /></div>
             <img className="hero-core" src="/logo.png" alt="" />
           </div>
-          <a className="scroll-cue" href="#sistema" aria-label="Bajar"><span /></a>
         </section>
 
         <System />

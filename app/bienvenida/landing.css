@@ -48,9 +48,6 @@
 @keyframes spin3 { from { transform: rotateX(78deg) rotateY(-30deg) rotateZ(0); } to { transform: rotateX(78deg) rotateY(-30deg) rotateZ(360deg); } }
 @keyframes pulse { 50% { opacity: .65; transform: scale(1.08); } }
 @keyframes float { 50% { transform: translate(-50%, calc(-50% - 10px)); } }
-.lp .scroll-cue { position: absolute; left: 50%; bottom: 28px; width: 26px; height: 42px; margin-left: -13px; border: 1px solid var(--line-2); border-radius: 99px; }
-.lp .scroll-cue span { position: absolute; left: 50%; top: 8px; width: 4px; height: 8px; margin-left: -2px; border-radius: 4px; background: var(--violet-hi); animation: cue 2s var(--ease) infinite; }
-@keyframes cue { 0% { opacity: 0; transform: translateY(0); } 30% { opacity: 1; } 100% { opacity: 0; transform: translateY(14px); } }/* Sistema orbital ligado al scroll */
 
 
 .lp .system { height: 520vh; position: relative; }
@@ -61,7 +58,7 @@
 .lp .orbit-path { position: absolute; width: min(64vw, 900px); height: 260px; overflow: visible; transform: rotate(calc(var(--p, 0) * 8deg - 4deg)); }
 .lp .orbit-path ellipse { fill: none; stroke: rgba(199, 125, 255, .22); stroke-width: 1; vector-effect: non-scaling-stroke; stroke-dasharray: 3 7; }
 .lp .core { width: 120px; height: 120px; border-radius: 50%; display: grid; place-items: center; background: radial-gradient(circle, rgba(157, 78, 221, .35), transparent 70%); position: relative; z-index: 50; }
-.lp .core img { width: 76px; filter: drop-shadow(0 0 28px rgba(199, 125, 255, .6)); transform: rotate(calc(var(--p, 0) * 360deg)); }
+.lp .core img { width: 76px; filter: drop-shadow(0 0 28px rgba(199, 125, 255, .6)); }
 .lp .sat { position: absolute; left: 50%; top: 50%; width: 0; height: 0; display: flex; justify-content: center; will-change: transform, opacity; }
 .lp .sat > * { flex: none; }
 .lp .sat-ico { position: absolute; transform: translate(-50%, -50%); width: 64px; height: 64px; display: grid; place-items: center; border-radius: 20px; background: rgba(25, 22, 31, .85); border: 1px solid var(--line-2); color: var(--paper); backdrop-filter: blur(6px); transition: border-color .4s, box-shadow .4s, color .4s; }
