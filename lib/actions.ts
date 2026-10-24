@@ -21,6 +21,20 @@ export async function createIssue(f: FormData) {
   redirect(`/t/${data!.key}`);
 }
 
+/** Crear una tarea desde una columna del tablero, sin salir de él. */
+export async function quickIssue(projectKey: string, title: string, status: string, epicId: string | null) {
+  const { supabase } = await requireUser();
+  const t = title.trim().slice(0, 300);
+  if (!t) return { error: 'Escribe un título.' };
+  if (!['todo', 'progress', 'review', 'done'].includes(status)) return { error: 'Estado no válido.' };
+  const { data: p } = await supabase.from('projects').select('id').eq('key', projectKey).single();
+  if (!p) return { error: 'Proyecto no encontrado.' };
+  const { error } = await supabase.from('issues').insert({ project_id: p.id, title: t, status, epic_id: epicId });
+  if (error) return { error: error.message };
+  revalidatePath('/', 'layout');
+  return { success: true };
+}
+
 export async function setIssueStatus(key: string, status: string) {
   const { supabase } = await requireUser();
   const { error } = await supabase.from('issues').update({ status }).eq('key', key);
@@ -364,4 +378,31 @@ export async function openNotification(f: FormData) {
   revalidatePath('/', 'layout');
   const href = s(f, 'href');
   redirect(href.startsWith('/') && !href.startsWith('//') ? href : '/notificaciones');
+}
+
+/* ---------- Copia en Google Drive ---------- */
+export async function saveBackup(f: FormData) {
+  const { supabase, user } = await requireUser();
+  const selection: Record<string, string[]> = {};
+  for (const [k, v] of f.entries()) {
+    const m = /^sel:(space:[0-9a-f-]{36}|[0-9a-f-]{36}):(docs|tasks|finance)$/.exec(k);
+    if (m && v === 'on') (selection[m[1]] ??= []).push(m[2]);
+  }
+  const { error } = await supabase.from('backup_settings').upsert({ user_id: user.id, selection, auto_weekly: f.get('auto') === 'on', updated_at: new Date().toISOString() });
+  if (error) back('/ajustes/copia', 'No se pudo guardar: ' + error.message);
+  if (f.get('run') === '1') {
+    const { runBackup } = await import('./drive');
+    const r = await runBackup(supabase, user.id);
+    back('/ajustes/copia', r.message, r.ok ? 'ok' : 'error');
+  }
+  back('/ajustes/copia', 'Selección guardada.', 'ok');
+}
+
+/** Copia semanal: solo corre si está activada y pasaron 7 días desde la última. */
+export async function autoBackup() {
+  const { supabase, user } = await requireUser();
+  const { data } = await supabase.from('backup_settings').select('auto_weekly, last_run').eq('user_id', user.id).maybeSingle();
+  if (!data?.auto_weekly || (data.last_run && Date.now() - new Date(data.last_run).getTime() < 7 * 864e5)) return;
+  const { runBackup } = await import('./drive');
+  await runBackup(supabase, user.id);
 }

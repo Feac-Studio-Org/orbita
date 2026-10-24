@@ -6,14 +6,17 @@ export async function GET(request: NextRequest) {
   const url = request.nextUrl;
   const back = url.clone();
   back.search = '';
-  back.pathname = '/calendario';
+  const drive = request.cookies.get('g_back')?.value === 'drive';
+  back.pathname = drive ? '/ajustes/copia' : '/calendario';
+  const what = drive ? 'Google Drive' : 'Google Calendar';
   const fail = (msg: string) => {
     back.searchParams.set('error', msg);
     const r = NextResponse.redirect(back);
     r.cookies.delete({ name: 'g_state', path: '/api/google' });
+    r.cookies.delete({ name: 'g_back', path: '/api/google' });
     return r;
   };
-  if (url.searchParams.get('error')) return fail('No se conectó Google Calendar: cancelaste el permiso.');
+  if (url.searchParams.get('error')) return fail(`No se conectó ${what}: cancelaste el permiso.`);
   const state = url.searchParams.get('state');
   if (!state || state !== request.cookies.get('g_state')?.value) return fail('La conexión venció. Intenta de nuevo.');
   const supabase = await createClient();
@@ -27,8 +30,9 @@ export async function GET(request: NextRequest) {
   } catch (e) {
     return fail((e as Error).message);
   }
-  back.searchParams.set('ok', 'Google Calendar conectado.');
+  back.searchParams.set('ok', `${what} conectado.`);
   const r = NextResponse.redirect(back);
   r.cookies.delete({ name: 'g_state', path: '/api/google' });
+  r.cookies.delete({ name: 'g_back', path: '/api/google' });
   return r;
 }

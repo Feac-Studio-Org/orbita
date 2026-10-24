@@ -3,14 +3,17 @@ const AUTH = 'https://accounts.google.com/o/oauth2/v2/auth';
 const TOKEN = 'https://oauth2.googleapis.com/token';
 const API = 'https://www.googleapis.com/calendar/v3';
 export const SCOPES = ['openid', 'email', 'https://www.googleapis.com/auth/calendar.events', 'https://www.googleapis.com/auth/calendar.readonly'];
+/** Solo los archivos que crea Órbita: no ve ni toca el resto del Drive. */
+export const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
+export const DRIVE_SCOPES = ['openid', 'email', DRIVE_SCOPE];
 
 export function googleConfigured() {
   return !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
 }
 
-export function authUrl(redirectUri: string, state: string) {
+export function authUrl(redirectUri: string, state: string, scopes: string[] = SCOPES) {
   const q = new URLSearchParams({
-    client_id: process.env.GOOGLE_CLIENT_ID!, redirect_uri: redirectUri, response_type: 'code', scope: SCOPES.join(' '),
+    client_id: process.env.GOOGLE_CLIENT_ID!, redirect_uri: redirectUri, response_type: 'code', scope: scopes.join(' '),
     access_type: 'offline', prompt: 'consent', include_granted_scopes: 'true', state,
   });
   return `${AUTH}?${q}`;

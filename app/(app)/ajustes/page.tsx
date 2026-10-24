@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { getContext } from '@/lib/data';
 import { ViewHead } from '@/components/bits';
 import { saveModules } from '@/lib/actions';
@@ -20,6 +21,10 @@ export default async function Settings({ searchParams }: { searchParams: Promise
     <>
       <ViewHead label="Tu cuenta" title="Ajustes" text="Activa solo lo que usas. Lo que apagas desaparece de la barra sin borrar sus datos." />
       {ok && <p className="ok-msg" role="status">{ok}</p>}
+      <Link href="/ajustes/copia" className="panel backup-link">
+        <div><b>Copia en Google Drive</b><span className="muted">Elige qué espacios y proyectos se guardan en tu Drive, en carpetas.</span></div>
+        <span className="link">Configurar</span>
+      </Link>
       <form className="form" action={saveModules}>
         <section className="panel">
           <div className="panel-head"><h2>Módulos</h2></div>

@@ -16,6 +16,44 @@ const MODULES = [
     i: <><path d="M9 3v4M15 3v4M7 7h10v4a5 5 0 0 1-10 0Z" /><path d="M12 16v5" /></> },
 ];
 
+const WHO = [
+  { k: 'Vida personal', t: 'Tu día, organizado', d: 'Tu horario de clases y rutinas, lo que estudias, tus metas y tus gastos, en un espacio que solo ves tú.',
+    b: ['Horario semanal con Google Calendar', 'Bases propias: materias, hábitos, lecturas', 'Gastos y suscripciones personales'],
+    i: <><circle cx="12" cy="8" r="3.5" /><path d="M5 20c1-3.6 3.8-5.5 7-5.5s6 1.9 7 5.5" /></> },
+  { k: 'Tu empresa', t: 'Tus proyectos, dirigidos', d: 'Cada producto con su tablero, backlog, épicas y documentación técnica. Ves el avance de todo el portafolio de un vistazo.',
+    b: ['Tableros y épicas por proyecto', 'Documentación con historial de versiones', 'Portafolio con avance, ritmo y gasto'],
+    i: <><rect x="3" y="7" width="18" height="13" rx="2.5" /><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 12h18" /></> },
+  { k: 'Equipos y socios', t: 'Los proyectos de otros', d: 'Participa en proyectos donde no eres dueño: ves solo lo que te toca, conversas con el equipo y llevas tus cuentas aparte.',
+    b: ['Roles: dueño, socio, miembro e invitado', 'Acceso por proyecto, no por todo', 'Mensajes y llamadas por canal'],
+    i: <><circle cx="8" cy="9" r="3" /><circle cx="16.5" cy="9.5" r="2.5" /><path d="M2.5 19c.8-3 3-4.6 5.5-4.6s4.7 1.6 5.5 4.6M14 14.6c2.4-.4 5 1 5.8 4.4" /></> },
+];
+
+const WHY: [string, string][] = [
+  ['Tareas en un gestor de proyectos', 'Tableros, backlog y épicas'],
+  ['Documentos en otra app', 'Documentación junto a su proyecto'],
+  ['Horario en el calendario', 'Calendario conectado a tus tareas'],
+  ['Cuentas en una hoja de cálculo', 'Finanzas por espacio y proyecto'],
+  ['Conversaciones en el chat', 'Canales y llamadas por proyecto'],
+];
+
+const POINTS: [string, string][] = [
+  ['Todo conectado', 'Una tarea sabe a qué proyecto, épica, documento y gasto pertenece.'],
+  ['Privado por diseño', 'Cada persona ve solo sus proyectos; la regla vive en la base de datos.'],
+  ['Tu IA trabaja contigo', 'Claude o ChatGPT registran avances y crean tareas por ti, con permisos.'],
+  ['Tus datos son tuyos', 'Copia de seguridad en tu Google Drive, en carpetas por espacio y proyecto.'],
+];
+
+const FEATS = [
+  { t: 'Gestión de proyectos', b: ['Tablero arrastrable con filtros', 'Backlog agrupado por épica', 'Subtareas, comentarios e historial', 'Prioridades, fechas y responsables'] },
+  { t: 'Documentación', b: ['Páginas en Markdown por proyecto', 'Versiones guardadas en cada cambio', 'Búsqueda en todo el sistema', 'Importada desde otras herramientas'] },
+  { t: 'Calendario', b: ['Vista semanal de bloques y clases', 'Sincronía con Google Calendar', 'Vencimientos de tareas a la vista', 'Recordatorios cada mañana'] },
+  { t: 'Finanzas', b: ['Gastos únicos y suscripciones', 'Separadas por espacio y proyecto', 'Aviso antes de cada cobro', 'Pesos y dólares'] },
+  { t: 'Mensajes y llamadas', b: ['Canales por espacio y proyecto', 'Mensajes en tiempo real', 'Llamadas de voz, video y pantalla', 'Sin instalar nada'] },
+  { t: 'Portafolio', b: ['Avance por proyecto', 'Tareas cerradas por semana', 'Carga de cada persona', 'Gasto mensual del espacio'] },
+  { t: 'Asistente por MCP', b: ['Claude, ChatGPT y otras IA', 'Entras con tu cuenta, sin claves', 'Permisos por espacio', 'Registro de todo lo que hace'] },
+  { t: 'Celular y respaldo', b: ['App Android con modo sin conexión', 'Avisos al momento', 'Copia en Google Drive', 'Tú eliges qué se respalda'] },
+];
+
 function Icon({ children, size = 22 }: { children: React.ReactNode; size?: number }) {
   return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{children}</svg>;
 }
@@ -171,9 +209,10 @@ export function Landing() {
       <header className={'lp-nav' + (scrolled ? ' solid' : '')}>
         <a href="#" className="lp-brand"><img src="/logo.png" alt="" /><b>Órbita</b></a>
         <nav>
-          <a href="#sistema">Sistema</a>
+          <a href="#para-quien">Para quién</a>
+          <a href="#por-que">Por qué</a>
+          <a href="#funciones">Funciones</a>
           <a href="#ia">Tu IA</a>
-          <a href="#espacios">Espacios</a>
           <a href="#movil">Celular</a>
         </nav>
         <a className="btn ghost" href="/login">Entrar</a>
@@ -184,8 +223,8 @@ export function Landing() {
         <section className="hero">
           <div className="hero-copy">
             <span className="eyebrow reveal">Un producto de FEAC Estudio</span>
-            <h1 className="reveal">Todo tu trabajo,<br />en <span className="serif">órbita</span>.</h1>
-            <p className="reveal">Proyectos, documentos, calendario, finanzas, mensajes y la IA que ya usas, girando alrededor de un solo lugar. En el computador y en el celular.</p>
+            <h1 className="reveal">Tu vida, tu trabajo<br />y tus equipos, en <span className="serif">órbita</span>.</h1>
+            <p className="reveal">Órbita es un solo lugar para organizar tu vida personal, dirigir los proyectos de tu empresa y trabajar en los proyectos de otros. Tareas, documentación, calendario, finanzas, mensajes con llamadas y la IA que ya usas, conectados entre sí. En el computador y en el celular.</p>
             <div className="hero-cta reveal">
               <a className="btn solid" href="/login?modo=registro">Crear mi cuenta</a>
               <a className="btn ghost" href="/descargas/orbita.apk" download>Descargar para Android</a>
@@ -200,7 +239,64 @@ export function Landing() {
           </div>
         </section>
 
+        {/* Para quién */}
+        <section className="who" id="para-quien">
+          <div className="sec-head">
+            <span className="eyebrow reveal">Para quién es</span>
+            <h2 className="reveal">Tres mundos, <span className="serif">un solo sistema</span></h2>
+            <p className="reveal">La mayoría de herramientas sirven para una cosa. Órbita sirve para todo lo que llevas al tiempo, sin mezclarlo.</p>
+          </div>
+          <div className="who-grid">
+            {WHO.map((w) => (
+              <article key={w.t} className="who-card reveal">
+                <span className="who-ico"><Icon>{w.i}</Icon></span>
+                <span className="eyebrow">{w.k}</span>
+                <h3>{w.t}</h3>
+                <p>{w.d}</p>
+                <ul>{w.b.map((b) => <li key={b}>{b}</li>)}</ul>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        {/* Por qué */}
+        <section className="why" id="por-que">
+          <div className="sec-head">
+            <span className="eyebrow reveal">Por qué Órbita</span>
+            <h2 className="reveal">Deja de saltar <span className="serif">entre cinco apps</span></h2>
+            <p className="reveal">Las tareas en una herramienta, los documentos en otra, el horario en otra y las conversaciones en el chat. Nada se habla entre sí y la información se pierde. En Órbita todo vive conectado.</p>
+          </div>
+          <div className="why-grid">
+            {WHY.map(([before, now]) => (
+              <div key={now} className="why-row reveal">
+                <span className="why-before">{before}</span>
+                <span className="why-arrow" aria-hidden="true" />
+                <span className="why-now">{now}</span>
+              </div>
+            ))}
+          </div>
+          <div className="why-points">
+            {POINTS.map(([t, d]) => <div key={t} className="reveal"><b>{t}</b><p>{d}</p></div>)}
+          </div>
+        </section>
+
         <System />
+
+        {/* Funciones */}
+        <section className="feats" id="funciones">
+          <div className="sec-head">
+            <span className="eyebrow reveal">Todo lo que incluye</span>
+            <h2 className="reveal">Cada función, <span className="serif">pensada para usarse</span></h2>
+          </div>
+          <div className="feat-grid">
+            {FEATS.map((f) => (
+              <article key={f.t} className="feat reveal">
+                <h3>{f.t}</h3>
+                <ul>{f.b.map((b) => <li key={b}>{b}</li>)}</ul>
+              </article>
+            ))}
+          </div>
+        </section>
 
         {/* IA por MCP */}
         <section className="ai" id="ia">
