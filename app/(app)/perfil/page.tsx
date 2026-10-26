@@ -27,7 +27,7 @@ export default async function Profile({ searchParams }: { searchParams: Promise<
         <section className="panel">
           <div className="panel-head"><h2>App para el celular</h2><span className="label">Android</span></div>
           <p className="muted" style={{ fontSize: 13.5 }}>Hoy, proyectos, tareas y captura rápida. Funciona sin conexión con lo último que viste.</p>
-          <a className="pill solid" href="/descargas/orbita.apk" download style={{ alignSelf: 'flex-start' }}><span className="pill__dot" />Descargar Órbita para Android</a>
+          <a className="pill solid" href="/descargar" style={{ alignSelf: 'flex-start' }}><span className="pill__dot" />Descargar Órbita para celular y computador</a>
           <p className="note">Al abrir el archivo, Android pide permitir la instalación desde el navegador.</p>
         </section>
         <form className="panel form" action={saveProfile}>

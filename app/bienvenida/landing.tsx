@@ -51,7 +51,7 @@ const FEATS = [
   { t: 'Mensajes y llamadas', b: ['Canales por espacio y proyecto', 'Mensajes en tiempo real', 'Llamadas de voz, video y pantalla', 'Sin instalar nada'] },
   { t: 'Portafolio', b: ['Avance por proyecto', 'Tareas cerradas por semana', 'Carga de cada persona', 'Gasto mensual del espacio'] },
   { t: 'Asistente por MCP', b: ['Claude, ChatGPT y otras IA', 'Entras con tu cuenta, sin claves', 'Permisos por espacio', 'Registro de todo lo que hace'] },
-  { t: 'Celular y respaldo', b: ['App Android con modo sin conexión', 'Avisos al momento', 'Copia en Google Drive', 'Tú eliges qué se respalda'] },
+  { t: 'Apps y respaldo', b: ['Windows, Mac, Linux y Android', 'Modo sin conexión en el celular', 'Copia en Google Drive', 'Tú eliges qué se respalda'] },
 ];
 
 function Icon({ children, size = 22 }: { children: React.ReactNode; size?: number }) {
@@ -227,7 +227,7 @@ export function Landing() {
             <p className="reveal">Órbita es un solo lugar para organizar tu vida personal, dirigir los proyectos de tu empresa y trabajar en los proyectos de otros. Tareas, documentación, calendario, finanzas, mensajes con llamadas y la IA que ya usas, conectados entre sí. En el computador y en el celular.</p>
             <div className="hero-cta reveal">
               <a className="btn solid" href="/login?modo=registro">Crear mi cuenta</a>
-              <a className="btn ghost" href="/descargas/orbita.apk" download>Descargar para Android</a>
+              <a className="btn ghost" href="/descargar">Descargar la app</a>
             </div>
           </div>
           <div className="hero-art" aria-hidden="true">
@@ -376,7 +376,7 @@ export function Landing() {
               <li>Captura rápida, con dictado por voz</li>
               <li>Funciona sin conexión y sincroniza al volver</li>
             </ul>
-            <a className="btn solid reveal" href="/descargas/orbita.apk" download>Descargar para Android</a>
+            <a className="btn solid reveal" href="/descargar">Descargar para celular y computador</a>
           </div>
         </section>
 
