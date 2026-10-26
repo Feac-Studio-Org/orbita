@@ -90,3 +90,43 @@ export function Columns({ points, format = (n: number) => String(n), height = 17
     </div>
   );
 }
+
+/** Varias líneas sobre las mismas etiquetas (por ejemplo, tareas creadas contra cerradas por semana). */
+export function Lines({ labels, series, height = 190 }: { labels: string[]; series: { name: string; color: string; values: number[] }[]; height?: number }) {
+  const W = 600, H = height, P = { l: 26, r: 10, t: 14, b: 26 };
+  const max = Math.max(1, ...series.flatMap((s) => s.values));
+  const nice = max <= 4 ? 4 : Math.ceil(max / 4) * 4;
+  const step = labels.length > 1 ? (W - P.l - P.r) / (labels.length - 1) : 0;
+  const y = (v: number) => P.t + (1 - v / nice) * (H - P.t - P.b);
+  const ticks = [0, nice / 4, nice / 2, (nice * 3) / 4, nice];
+  return (
+    <div className="lines">
+      <div className="legend">{series.map((s) => <span key={s.name}><i style={{ background: s.color }} />{s.name} <b className="num">{s.values.reduce((a, b) => a + b, 0)}</b></span>)}</div>
+      <svg className="area" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={series.map((s) => `${s.name}: ${s.values.join(', ')}`).join('. ')}>
+        {ticks.map((t) => <g key={t}><line x1={P.l} x2={W - P.r} y1={y(t)} y2={y(t)} className="grid-line" /><text x={P.l - 6} y={y(t) + 3} textAnchor="end" className="pt-lab">{t}</text></g>)}
+        {labels.map((l, i) => <text key={l + i} x={P.l + i * step} y={H - 8} textAnchor="middle" className="pt-lab">{l}</text>)}
+        {series.map((s) => {
+          const d = s.values.map((v, i) => `${i ? 'L' : 'M'}${(P.l + i * step).toFixed(1)},${y(v).toFixed(1)}`).join(' ');
+          return (
+            <g key={s.name}>
+              <path d={d} fill="none" stroke={s.color} strokeWidth="2.2" strokeLinejoin="round" strokeLinecap="round" />
+              {s.values.map((v, i) => <circle key={i} cx={P.l + i * step} cy={y(v)} r="3.4" fill="var(--ink-2)" stroke={s.color} strokeWidth="1.8"><title>{`${s.name} · ${labels[i]}: ${v}`}</title></circle>)}
+            </g>
+          );
+        })}
+      </svg>
+    </div>
+  );
+}
+
+/** Anillo pequeño de avance para tarjetas. */
+export function Ring({ pct, color, size = 56 }: { pct: number; color: string; size?: number }) {
+  const r = 22, c = 2 * Math.PI * r;
+  return (
+    <svg width={size} height={size} viewBox="0 0 56 56" aria-label={`${pct}% hecho`} role="img">
+      <circle cx="28" cy="28" r={r} fill="none" stroke="var(--ink-4)" strokeWidth="6" />
+      <circle cx="28" cy="28" r={r} fill="none" stroke={color} strokeWidth="6" strokeLinecap="round" strokeDasharray={`${(pct / 100) * c} ${c}`} transform="rotate(-90 28 28)" />
+      <text x="28" y="32" textAnchor="middle" className="ring-n">{pct}%</text>
+    </svg>
+  );
+}

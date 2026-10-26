@@ -566,3 +566,17 @@ details.add[open] > summary { margin-bottom: 12px; }
   .tiles.n2, .tiles.n3, .tiles.n4, .tiles.n5, .tiles.n6 { grid-template-columns: minmax(0, 1fr); }
   .tile { aspect-ratio: 4 / 3; }
 }
+
+/* ---------- Portafolio: tarjetas y líneas ---------- */
+.proj-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+.proj-card { display: flex; gap: 14px; align-items: center; padding: 14px 16px; border: 1px solid var(--line); border-radius: 14px; background: var(--ink-2); transition: border-color .15s, transform .15s; position: relative; overflow: hidden; }
+.proj-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--pc); }
+.proj-card:hover { border-color: var(--pc); transform: translateY(-2px); }
+.pc-body { display: grid; gap: 3px; min-width: 0; }
+.pc-body > b { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pc-nums { display: flex; gap: 12px; flex-wrap: wrap; font-size: 12px; color: var(--mute); margin-top: 4px; }
+.pc-nums b { color: var(--paper); font-weight: 600; }
+.pc-nums .bad b { color: var(--bad); }
+.ring-n { font: 600 12px var(--f-sans); fill: var(--paper); }
+.lines { display: grid; gap: 10px; }
+.legend b { color: var(--paper); margin-left: 4px; }

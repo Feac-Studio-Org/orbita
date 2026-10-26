@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import { getContext } from '@/lib/data';
 import { MES, STATUS, addDays, isLate, money, todayISO } from '@/lib/format';
 import { IssueRow, ViewHead } from '@/components/bits';
-import { AreaLine, Columns, Donut, STATUS_COLOR, StackBars } from '@/components/charts';
+import { Columns, Donut, Lines, Ring, STATUS_COLOR, StackBars } from '@/components/charts';
 
 export const metadata = { title: 'Portafolio' };
 const ORDER = ['done', 'review', 'progress', 'todo'] as const;
@@ -24,7 +24,7 @@ export default async function Portfolio({ params }: { params: Promise<{ space: s
   const today = todayISO();
   const weeks = Array.from({ length: 8 }, (_, i) => addDays(monday(today), -7 * (7 - i)));
 
-  const { data } = ids.length ? await supabase.from('issues').select('id, key, title, status, priority, due_date, project_id, assignee_id').in('project_id', ids) : { data: [] };
+  const { data } = ids.length ? await supabase.from('issues').select('id, key, title, status, priority, due_date, project_id, assignee_id, created_at').in('project_id', ids) : { data: [] };
   const all = data ?? [];
   const [{ data: closed }, { data: fin }] = await Promise.all([
     all.length ? supabase.from('issue_events').select('created_at, data').eq('kind', 'status').in('issue_id', all.map((i) => i.id)).gte('created_at', weeks[0]) : Promise.resolve({ data: [] }),
@@ -45,8 +45,12 @@ export default async function Portfolio({ params }: { params: Promise<{ space: s
   const perWeek = weeks.map((w, i) => {
     const end = weeks[i + 1] ?? addDays(w, 7);
     const [, m, d] = w.split('-');
-    return { label: `${Number(d)} ${MES[Number(m) - 1]}`, value: toDone.filter((e) => e.created_at.slice(0, 10) >= w && e.created_at.slice(0, 10) < end).length };
+    return { label: `${Number(d)} ${MES[Number(m) - 1]}`, value: toDone.filter((e) => e.created_at.slice(0, 10) >= w && e.created_at.slice(0, 10) < end).length,
+      created: all.filter((x) => x.created_at.slice(0, 10) >= w && x.created_at.slice(0, 10) < end).length };
   });
+  // Vencimientos de las próximas 4 semanas, por semana.
+  const nextWeeks = Array.from({ length: 4 }, (_, i) => addDays(monday(today), 7 * i));
+  const dueWeeks = nextWeeks.map((w, i) => ({ label: i === 0 ? 'Esta' : i === 1 ? 'Próxima' : `En ${i} sem`, value: open.filter((x) => x.due_date && x.due_date >= w && x.due_date < addDays(w, 7)).length }));
 
   // Gasto por mes en pesos: pagos únicos en su mes, suscripciones mensuales cada mes desde que empezaron.
   const months = Array.from({ length: 6 }, (_, i) => { const d = new Date(today + 'T12:00:00Z'); d.setUTCDate(1); d.setUTCMonth(d.getUTCMonth() - (5 - i)); return d.toISOString().slice(0, 7); });
@@ -78,6 +82,24 @@ export default async function Portfolio({ params }: { params: Promise<{ space: s
         <div className="stat"><span className="label">Cerradas en 8 semanas</span><b className="num">{toDone.length}</b><span>{(toDone.length / 8).toFixed(1).replace('.0', '')} por semana en promedio</span></div>
       </div>
 
+      <div className="proj-cards">
+        {space.projects.map((p) => {
+          const its = all.filter((i) => i.project_id === p.id);
+          const d = its.filter((i) => i.status === 'done').length;
+          const pl = its.filter((i) => isLate(i.due_date, i.status)).length;
+          const prog = its.filter((i) => i.status === 'progress' || i.status === 'review').length;
+          return (
+            <Link key={p.id} href={`/p/${p.key}`} className="proj-card" style={{ ['--pc' as string]: p.color }}>
+              <Ring pct={its.length ? Math.round((d / its.length) * 100) : 0} color={p.color} />
+              <div className="pc-body">
+                <b>{p.name}</b><span className="key">{p.key} · {p.status_label}</span>
+                <div className="pc-nums"><span><b className="num">{its.length - d}</b> abiertas</span><span><b className="num">{prog}</b> en curso</span><span className={pl ? 'bad' : ''}><b className="num">{pl}</b> atrasadas</span></div>
+              </div>
+            </Link>
+          );
+        })}
+      </div>
+
       <section className="panel">
         <div className="panel-head"><h2>Avance por proyecto</h2>
           <div className="legend">{ORDER.map((k) => <span key={k}><i style={{ background: STATUS_COLOR[k] }} />{STATUS[k]}</span>)}</div>
@@ -91,12 +113,15 @@ export default async function Portfolio({ params }: { params: Promise<{ space: s
 
       <div className="grid g-2">
         <section className="panel">
-          <div className="panel-head"><h2>Tareas cerradas por semana</h2><span className="label">Últimas 8 semanas</span></div>
-          <AreaLine points={perWeek} />
+          <div className="panel-head"><h2>Ritmo de trabajo</h2><span className="label">Últimas 8 semanas</span></div>
+          <Lines labels={perWeek.map((w) => w.label)} series={[{ name: 'Creadas', color: '#5fa8f5', values: perWeek.map((w) => w.created) }, { name: 'Cerradas', color: '#4cc38a', values: perWeek.map((w) => w.value) }]} />
+          <p className="note">Si las creadas superan a las cerradas, el trabajo pendiente está creciendo.</p>
         </section>
         <section className="panel">
           <div className="panel-head"><h2>Estado del espacio</h2><span className="label">{all.length} tareas</span></div>
           <Donut data={parts(all)} center={String(open.length)} sub="abiertas" />
+          <div className="panel-head" style={{ marginTop: 6 }}><h2>Vencen por semana</h2><span className="label">Próximas 4</span></div>
+          <Columns points={dueWeeks} height={120} />
         </section>
       </div>
 
