@@ -8,7 +8,22 @@ export default async function Login({ searchParams }: { searchParams: Promise<{ 
   const safeNext = next && next.startsWith('/') && !next.startsWith('//') ? next : '';
   const registro = modo === 'registro';
   return (
-    <main className="auth">
+    <main className="auth auth-split">
+      <aside className="auth-art" aria-hidden="true">
+        <div className="aa-sys">
+          <div className="aa-ring a1"><i /></div><div className="aa-ring a2"><i /></div><div className="aa-ring a3"><i /></div>
+          <img src="/logo.png" alt="" className="aa-core" />
+        </div>
+        <div className="aa-copy">
+          <b>Tu vida, tu trabajo y tus equipos, <span className="serif violet">en órbita.</span></b>
+          <ul>
+            <li>Proyectos con sprints, tableros y documentación</li>
+            <li>Calendario, finanzas y mensajes con llamadas</li>
+            <li>Tu IA conectada para registrar avances</li>
+          </ul>
+        </div>
+        <span className="aa-foot">FEAC Estudio · Cali, Colombia</span>
+      </aside>
       <div className="auth-card">
         <div className="brand" style={{ padding: 0 }}><img src="/logo.png" alt="" style={{ width: 40, height: 40 }} /><b style={{ fontSize: 22 }}>Órbita</b></div>
         <div>
