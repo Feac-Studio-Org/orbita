@@ -462,3 +462,25 @@ export async function openDirect(f: FormData) {
   revalidatePath('/mensajes');
   redirect(`/mensajes?canal=${data}`);
 }
+
+/* ---------- Fotos y logos (la imagen ya se subió desde el navegador) ---------- */
+const PUBLIC_STORAGE = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/`;
+
+export async function setAvatarUrl(url: string) {
+  const { supabase, user } = await requireUser();
+  if (!url.startsWith(`${PUBLIC_STORAGE}avatars/${user.id}/`)) return { error: 'Dirección de imagen no válida.' };
+  const { error } = await supabase.from('profiles').update({ avatar_url: url }).eq('id', user.id);
+  if (error) return { error: error.message };
+  revalidatePath('/', 'layout');
+  return { success: true };
+}
+
+export async function setProjectLogo(projectId: string, url: string | null) {
+  const { supabase } = await requireUser();
+  if (url !== null && !url.startsWith(`${PUBLIC_STORAGE}logos/${projectId}/`)) return { error: 'Dirección de imagen no válida.' };
+  const { data, error } = await supabase.from('projects').update({ logo_url: url }).eq('id', projectId).select('id');
+  if (error) return { error: error.message };
+  if (!data?.length) return { error: 'No tienes permiso para cambiar este proyecto.' };
+  revalidatePath('/', 'layout');
+  return { success: true };
+}

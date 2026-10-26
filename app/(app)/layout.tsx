@@ -18,7 +18,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const navSpaces = spaces.map((s) => ({
     id: s.id, name: s.name, kind: s.kind, roleLabel: s.kind === 'personal' ? 'Solo tú' : ROLE[s.role],
     isOwner: s.role === 'owner', portfolio: !!s.modules.portfolio && s.kind === 'team', members: s.modules.members !== false,
-    projects: s.projects.map((p) => ({ key: p.key, name: p.name, color: p.color })),
+    projects: s.projects.map((p) => ({ key: p.key, name: p.name, color: p.color, logo: p.logo_url })),
   }));
   return (
     <div className="app">

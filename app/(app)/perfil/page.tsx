@@ -2,7 +2,8 @@ import Link from 'next/link';
 import { getContext } from '@/lib/data';
 import { ROLE } from '@/lib/format';
 import { ViewHead } from '@/components/bits';
-import { saveAvatar, saveProfile } from '@/lib/actions';
+import { saveProfile } from '@/lib/actions';
+import { ImageUpload } from '@/components/image-upload';
 import { Avatar } from '@/components/avatar';
 
 export const metadata = { title: 'Perfil' };
@@ -36,12 +37,13 @@ export default async function Profile({ searchParams }: { searchParams: Promise<
           <label className="field">Correo<input value={user.email ?? ''} readOnly disabled /></label>
           <button className="pill solid" type="submit" style={{ alignSelf: 'flex-start' }}>Guardar</button>
         </form>
-        <form className="panel form" action={saveAvatar}>
+        <section className="panel">
           <div className="panel-head"><h2>Foto de perfil</h2></div>
-          <div className="inline"><Avatar name={profile?.full_name} url={profile?.avatar_url} size={56} /><input className="inp" type="file" name="foto" accept="image/jpeg,image/png,image/webp" required /></div>
-          <p className="note">JPG, PNG o WebP de hasta 3 MB.</p>
-          <button className="pill" type="submit" style={{ alignSelf: 'flex-start' }}>Subir foto</button>
-        </form>
+          <div className="inline" style={{ gap: 16 }}>
+            <ImageUpload kind="avatar" folder={user.id} label="Cambiar foto" className="avatar-up"><Avatar name={profile?.full_name} url={profile?.avatar_url} size={72} /></ImageUpload>
+            <p className="note">Toca la foto para cambiarla. Sirve cualquier imagen; Órbita la reduce sola antes de subirla.</p>
+          </div>
+        </section>
       </div>
     </>
   );

@@ -91,6 +91,7 @@ export default async function Portfolio({ params }: { params: Promise<{ space: s
           return (
             <Link key={p.id} href={`/p/${p.key}`} className="proj-card" style={{ ['--pc' as string]: p.color }}>
               <Ring pct={its.length ? Math.round((d / its.length) * 100) : 0} color={p.color} />
+              {p.logo_url && <img className="pc-logo" src={p.logo_url} alt="" />}
               <div className="pc-body">
                 <b>{p.name}</b><span className="key">{p.key} · {p.status_label}</span>
                 <div className="pc-nums"><span><b className="num">{its.length - d}</b> abiertas</span><span><b className="num">{prog}</b> en curso</span><span className={pl ? 'bad' : ''}><b className="num">{pl}</b> atrasadas</span></div>

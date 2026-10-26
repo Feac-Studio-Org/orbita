@@ -4,7 +4,7 @@ import { usePathname, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Icon, type IconName } from './icons';
 
-type NavProject = { key: string; name: string; color: string };
+type NavProject = { key: string; name: string; color: string; logo?: string | null };
 type NavSpace = { id: string; name: string; kind: string; roleLabel: string; isOwner: boolean; portfolio: boolean; members: boolean; projects: NavProject[] };
 type Props = {
   name: string; initial: string; avatarUrl?: string | null; spaces: NavSpace[];
@@ -42,11 +42,11 @@ export function Sidebar({ name, initial, avatarUrl, spaces, modules, unread }: P
     try { localStorage.setItem('orbita-nav', JSON.stringify(next)); } catch {}
   }
 
-  const item = (href: string, label: string, ico: IconName | { color: string }, extra?: React.ReactNode, active?: boolean) => {
+  const item = (href: string, label: string, ico: IconName | { color: string; logo?: string | null }, extra?: React.ReactNode, active?: boolean) => {
     const on = active ?? (href === '/' ? path === '/' : path === href || path.startsWith(href + '/'));
     return (
       <Link key={href + label} href={href} className="nav-item" aria-current={on ? 'page' : undefined}>
-        {typeof ico === 'string' ? <Icon name={ico} /> : <span className="dot" style={{ background: ico.color }} />}
+        {typeof ico === 'string' ? <Icon name={ico} /> : ico.logo ? <img className="nav-logo" src={ico.logo} alt="" /> : <span className="dot" style={{ background: ico.color }} />}
         <span className="nl">{label}</span>
         {extra}
       </Link>
@@ -87,7 +87,7 @@ export function Sidebar({ name, initial, avatarUrl, spaces, modules, unread }: P
               </>
             )}
             {s.portfolio && item(`/portafolio/${s.id}`, 'Portafolio', 'chart')}
-            {s.projects.map((p) => item(`/p/${p.key}`, p.name, { color: p.color }, <span className="key">{p.key}</span>))}
+            {s.projects.map((p) => item(`/p/${p.key}`, p.name, { color: p.color, logo: p.logo }, <span className="key">{p.key}</span>))}
             {s.kind === 'team' && s.members && item(`/miembros/${s.id}`, 'Miembros y roles', 'people')}
             {s.isOwner && item(`/nuevo/proyecto?espacio=${s.id}`, 'Nuevo proyecto', 'plus', null, false)}
           </details>

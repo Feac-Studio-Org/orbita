@@ -8,6 +8,8 @@ import { Donut, STATUS_COLOR } from '@/components/charts';
 import { Empty, Markdown } from '@/components/bits';
 import { closeSprint, createDoc, createEpic, createExpense, createSprint, saveDoc, startSprint } from '@/lib/actions';
 import { SprintPicker } from '@/components/sprint-picker';
+import { ProjectMark } from '@/components/project-mark';
+import { ImageUpload } from '@/components/image-upload';
 
 export async function generateMetadata({ params }: { params: Promise<{ key: string }> }) {
   return { title: (await params).key.toUpperCase() };
@@ -398,7 +400,7 @@ export default async function ProjectPage({ params, searchParams }: { params: Pr
   return (
     <>
       <div className="proj-head" style={{ ['--pc' as string]: p.color }}>
-        <span className="proj-mark">{p.key.slice(0, 2)}</span>
+        {canEdit ? <ImageUpload kind="logo" folder={p.id} project={p.id} label={p.logo_url ? 'Cambiar logo' : 'Poner logo'} className="proj-logo-up"><ProjectMark p={p} size={56} radius={16} /></ImageUpload> : <ProjectMark p={p} size={56} radius={16} />}
         <div className="proj-title">
           <div className="label">{space.name}{space.role === 'partner' ? ' · espacio compartido' : ''} · {p.key}</div>
           <h1>{p.name}</h1>

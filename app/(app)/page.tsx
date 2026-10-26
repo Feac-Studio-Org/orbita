@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { ProjectMark } from '@/components/project-mark';
 import { getContext } from '@/lib/data';
 import { DAYS, MES, addDays, hhmm, isLate, isoWeekday, todayISO } from '@/lib/format';
 import { IssueRow, Empty } from '@/components/bits';
@@ -78,7 +79,7 @@ export default async function Home() {
               return (
                 <Link key={p.key} href={`/p/${p.key}`} className="proj">
                   <div className="proj-top">
-                    <span className="proj-mark" style={{ background: p.color + '22', color: p.color }}>{p.key.slice(0, 3)}</span>
+                    <ProjectMark p={p} size={34} />
                     <div style={{ minWidth: 0 }}><b>{p.name}</b><span>{p.description}</span></div>
                   </div>
                   <span className="tag v" style={{ alignSelf: 'flex-start' }}>{p.status_label}</span>

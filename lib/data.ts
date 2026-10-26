@@ -10,7 +10,7 @@ export type Space = {
 };
 export type Project = {
   id: string; key: string; name: string; description: string; color: string; status_label: string;
-  repo: string; repo_url: string; space_id: string; position: number; finance_separate: boolean;
+  repo: string; repo_url: string; space_id: string; position: number; finance_separate: boolean; logo_url: string | null;
 };
 export type Issue = {
   id: string; key: string; number: number; type: string; title: string; description: string; status: string; priority: string;
@@ -23,7 +23,7 @@ export const getContext = cache(async () => {
   const [{ data: profile }, { data: members }, { data: projects }] = await Promise.all([
     supabase.from('profiles').select('id, full_name, timezone, modules, preferences, avatar_url').eq('id', user.id).single(),
     supabase.from('space_members').select('role, position, spaces (id, name, kind, description, modules, created_at)').eq('user_id', user.id),
-    supabase.from('projects').select('id, key, name, description, color, status_label, repo, repo_url, space_id, position, finance_separate').is('archived_at', null).order('position'),
+    supabase.from('projects').select('id, key, name, description, color, status_label, repo, repo_url, space_id, position, finance_separate, logo_url').is('archived_at', null).order('position'),
   ]);
   const spaces: Space[] = (members ?? [])
     .map((m: any) => ({ ...m.spaces, role: m.role, projects: (projects ?? []).filter((p) => p.space_id === m.spaces.id) }))
