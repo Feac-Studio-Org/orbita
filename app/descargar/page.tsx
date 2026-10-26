@@ -42,7 +42,7 @@ export default function Download() {
             <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" strokeLinecap="round" aria-hidden="true">{i.icon}</svg>
             <h2>{i.name}</h2>
             <p className="dl-note">{i.note}</p>
-            {i.size ? <a className="dl-btn" href={`/descargas/${i.file}`} download>Descargar · {i.size}</a> : <span className="dl-soon">Disponible muy pronto</span>}
+            {i.size ? <a className="dl-btn" href={`/descargas/${i.file}`} download>Descargar · {i.size}</a> : <span className="dl-soon">Nueva versión muy pronto</span>}
             <p className="dl-help">{i.help}</p>
           </article>
         ))}
