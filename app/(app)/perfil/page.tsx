@@ -24,7 +24,7 @@ export default async function Profile({ searchParams }: { searchParams: Promise<
             <div className="row" key={s.id}><span className="tag v">{s.kind === 'personal' ? 'Solo tú' : ROLE[s.role]}</span><div className="t"><b>{s.name}</b><span>{s.projects.map((p) => p.name).join(', ') || 'Sin proyectos'}</span></div><span /></div>
           ))}</div>
         </section>
-        <section className="panel">
+        <section className="panel only-web">
           <div className="panel-head"><h2>App para el celular</h2><span className="label">Android</span></div>
           <p className="muted" style={{ fontSize: 13.5 }}>Hoy, proyectos, tareas y captura rápida. Funciona sin conexión con lo último que viste.</p>
           <a className="pill solid" href="/descargar" style={{ alignSelf: 'flex-start' }}><span className="pill__dot" />Descargar Órbita para celular y computador</a>

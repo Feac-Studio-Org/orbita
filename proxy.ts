@@ -17,8 +17,17 @@ export async function proxy(request: NextRequest) {
   });
   const { data } = await supabase.auth.getUser();
   const path = request.nextUrl.pathname;
+  // La app de computador abre directo en el inicio de sesión: nada de presentación ni de "descarga la app".
+  const desktop = /OrbitaDesktop/.test(request.headers.get('user-agent') ?? '');
+  if (desktop && (path.startsWith('/bienvenida') || path.startsWith('/descargar'))) {
+    const url = request.nextUrl.clone();
+    url.pathname = data.user ? '/' : '/login';
+    url.search = '';
+    return NextResponse.redirect(url);
+  }
   if (!data.user && path === '/') {
     const url = request.nextUrl.clone();
+    if (desktop) { url.pathname = '/login'; return NextResponse.redirect(url); }
     url.pathname = '/bienvenida';
     return NextResponse.rewrite(url);
   }
