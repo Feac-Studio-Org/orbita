@@ -406,3 +406,50 @@ export async function autoBackup() {
   const { runBackup } = await import('./drive');
   await runBackup(supabase, user.id);
 }
+
+/* ---------- Sprints ---------- */
+export async function createSprint(f: FormData) {
+  const { supabase } = await requireUser();
+  const key = s(f, 'project');
+  const { data: p } = await supabase.from('projects').select('id').eq('key', key).single();
+  if (!p) back(`/p/${key}?tab=sprints`, 'Proyecto no encontrado.');
+  const { error } = await supabase.from('sprints').insert({ project_id: p!.id, name: s(f, 'name') || 'Sprint', goal: s(f, 'goal'), start_date: opt(f, 'start'), end_date: opt(f, 'end') });
+  if (error) back(`/p/${key}?tab=sprints`, 'No se pudo crear: ' + error.message);
+  revalidatePath(`/p/${key}`);
+  back(`/p/${key}?tab=sprints`, 'Sprint creado. Ahora pásale tareas desde el backlog.', 'ok');
+}
+
+export async function startSprint(f: FormData) {
+  const { supabase } = await requireUser();
+  const key = s(f, 'project');
+  const { data: sp } = await supabase.from('sprints').select('id, project_id, start_date').eq('id', s(f, 'id')).single();
+  if (!sp) back(`/p/${key}?tab=sprints`, 'Sprint no encontrado.');
+  const { count } = await supabase.from('sprints').select('id', { count: 'exact', head: true }).eq('project_id', sp!.project_id).eq('state', 'active');
+  if (count) back(`/p/${key}?tab=sprints`, 'Ya hay un sprint activo. Ciérralo antes de empezar otro.');
+  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Bogota' });
+  const { error } = await supabase.from('sprints').update({ state: 'active', start_date: sp!.start_date ?? today }).eq('id', sp!.id);
+  if (error) back(`/p/${key}?tab=sprints`, 'No se pudo empezar: ' + error.message);
+  revalidatePath(`/p/${key}`);
+  redirect(`/p/${key}?tab=tablero`);
+}
+
+export async function closeSprint(f: FormData) {
+  const { supabase } = await requireUser();
+  const key = s(f, 'project');
+  const id = s(f, 'id');
+  const dest = s(f, 'dest');
+  const { error: e1 } = await supabase.from('issues').update({ sprint_id: dest && dest !== 'backlog' ? dest : null }).eq('sprint_id', id).neq('status', 'done');
+  if (e1) back(`/p/${key}?tab=sprints`, 'No se pudieron mover las tareas: ' + e1.message);
+  const { error } = await supabase.from('sprints').update({ state: 'closed' }).eq('id', id);
+  if (error) back(`/p/${key}?tab=sprints`, 'No se pudo cerrar: ' + error.message);
+  revalidatePath(`/p/${key}`);
+  back(`/p/${key}?tab=sprints`, 'Sprint cerrado.', 'ok');
+}
+
+export async function setIssueSprint(key: string, sprintId: string | null) {
+  const { supabase } = await requireUser();
+  const { error } = await supabase.from('issues').update({ sprint_id: sprintId }).eq('key', key);
+  if (error) return { error: error.message };
+  revalidatePath('/', 'layout');
+  return { success: true };
+}

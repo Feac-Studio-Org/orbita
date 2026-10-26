@@ -6,13 +6,14 @@ import { Board } from '@/components/board';
 import { Avatar } from '@/components/avatar';
 import { Donut, STATUS_COLOR } from '@/components/charts';
 import { Empty, Markdown } from '@/components/bits';
-import { createDoc, createEpic, createExpense, saveDoc } from '@/lib/actions';
+import { closeSprint, createDoc, createEpic, createExpense, createSprint, saveDoc, startSprint } from '@/lib/actions';
+import { SprintPicker } from '@/components/sprint-picker';
 
 export async function generateMetadata({ params }: { params: Promise<{ key: string }> }) {
   return { title: (await params).key.toUpperCase() };
 }
 
-const TABS = [['resumen', 'Resumen'], ['tablero', 'Tablero'], ['backlog', 'Backlog'], ['epicas', 'Épicas'], ['documentos', 'Documentos'], ['finanzas', 'Finanzas']] as const;
+const TABS = [['resumen', 'Resumen'], ['tablero', 'Tablero'], ['backlog', 'Backlog'], ['sprints', 'Sprints'], ['epicas', 'Épicas'], ['documentos', 'Documentos'], ['finanzas', 'Finanzas']] as const;
 
 function ago(iso: string) {
   const m = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
@@ -24,7 +25,7 @@ function ago(iso: string) {
   return d < 30 ? `hace ${d} d` : new Date(iso).toLocaleDateString('es-CO', { timeZone: 'America/Bogota', day: 'numeric', month: 'short' });
 }
 
-export default async function ProjectPage({ params, searchParams }: { params: Promise<{ key: string }>; searchParams: Promise<{ tab?: string; doc?: string; editar?: string }> }) {
+export default async function ProjectPage({ params, searchParams }: { params: Promise<{ key: string }>; searchParams: Promise<{ tab?: string; doc?: string; editar?: string; sprint?: string; ok?: string; error?: string }> }) {
   const { key } = await params;
   const sp = await searchParams;
   const { supabase, projects, spaces, modules } = await getContext();
@@ -36,11 +37,12 @@ export default async function ProjectPage({ params, searchParams }: { params: Pr
   const tabs = TABS.filter(([t]) => t !== 'finanzas' || showFinance);
   const tab = tabs.some(([t]) => t === sp.tab) ? sp.tab! : 'resumen';
 
-  const [{ data: issues }, { data: epics }, { data: sm }, { data: pa }] = await Promise.all([
-    supabase.from('issues').select('id, key, number, title, status, priority, due_date, epic_id, assignee_id, updated_at, subtasks (done)').eq('project_id', p.id).order('number'),
+  const [{ data: issues }, { data: epics }, { data: sm }, { data: pa }, { data: sprintRows }] = await Promise.all([
+    supabase.from('issues').select('id, key, number, title, status, priority, due_date, epic_id, sprint_id, assignee_id, updated_at, subtasks (done)').eq('project_id', p.id).order('number'),
     supabase.from('epics').select('id, key, name, description, status, start_date, end_date, position').eq('project_id', p.id).order('position').order('created_at'),
     supabase.from('space_members').select('user_id, role').eq('space_id', p.space_id),
     supabase.from('project_access').select('user_id').eq('project_id', p.id),
+    supabase.from('sprints').select('id, name, goal, start_date, end_date, state, created_at').eq('project_id', p.id).order('created_at'),
   ]);
   const all = issues ?? [];
   const eps = epics ?? [];
@@ -49,6 +51,12 @@ export default async function ProjectPage({ params, searchParams }: { params: Pr
   const { data: profs } = team.length ? await supabase.from('profiles').select('id, full_name, avatar_url').in('id', team.map((m) => m.user_id)) : { data: [] };
   const people = team.map((m) => { const pr = profs?.find((x) => x.id === m.user_id); return { id: m.user_id, name: pr?.full_name || 'Sin nombre', avatar: pr?.avatar_url ?? null, role: m.role as string }; });
   const epicName = (id: string | null) => eps.find((e) => e.id === id)?.name;
+  const sprints = sprintRows ?? [];
+  const activeSprint = sprints.find((x) => x.state === 'active');
+  const openSprints = sprints.filter((x) => x.state !== 'closed');
+  const daysLeft = (end: string | null) => end ? Math.round((new Date(end + 'T12:00:00Z').getTime() - new Date(todayISO() + 'T12:00:00Z').getTime()) / 864e5) : null;
+  const sprintStats = (id: string) => { const its = all.filter((i) => i.sprint_id === id); const d = its.filter((i) => i.status === 'done').length; return { its, d, pct: its.length ? Math.round((d / its.length) * 100) : 0 }; };
+  const flash = sp.ok ? <p className="ok-msg" role="status">{sp.ok}</p> : sp.error ? <p className="err" role="alert">{sp.error}</p> : null;
   const done = all.filter((i) => i.status === 'done').length;
   const pct = all.length ? Math.round((done / all.length) * 100) : 0;
   const late = all.filter((i) => isLate(i.due_date, i.status));
@@ -80,6 +88,15 @@ export default async function ProjectPage({ params, searchParams }: { params: Pr
           <div className="stat"><span className="label">Próximas 2 semanas</span><b className="num">{soon.length}</b><span>con fecha de entrega</span></div>
         </div>
 
+        {activeSprint && (() => { const stx = sprintStats(activeSprint.id); const left = daysLeft(activeSprint.end_date); return (
+          <Link href={`/p/${p.key}?tab=tablero`} className="sprint-now">
+            <span className="live-dot" />
+            <div><span className="label">Sprint activo</span><b>{activeSprint.name}</b>{activeSprint.goal && <span className="muted"> · {activeSprint.goal}</span>}</div>
+            <div className="bar" style={{ width: 160 }}><i style={{ width: Math.max(stx.pct, 2) + '%', background: p.color }} /></div>
+            <span className="num">{stx.d}/{stx.its.length}</span>
+            {left !== null && <span className={'tag ' + (left < 0 ? 'bad' : left <= 2 ? 'warn' : '')}>{left < 0 ? `Vencido hace ${-left} d` : `${left} días`}</span>}
+          </Link>
+        ); })()}
         <div className="grid g-sum">
           <section className="panel">
             <div className="panel-head"><h2>Estado de las tareas</h2><Link className="link" href={`/p/${p.key}?tab=tablero`}>Abrir tablero</Link></div>
@@ -160,30 +177,113 @@ export default async function ProjectPage({ params, searchParams }: { params: Pr
       </>
     );
   } else if (tab === 'tablero') {
-    body = all.length || canEdit ? (
-      <Board project={p.key} canEdit={canEdit} epics={eps.map((e) => ({ id: e.id, name: e.name }))} people={people}
-        issues={all.map((i) => ({ key: i.key, title: i.title, status: i.status, priority: i.priority, due_date: i.due_date, epic_id: i.epic_id, epic: epicName(i.epic_id), assignee_id: i.assignee_id,
-          subtasks: [((i.subtasks as { done: boolean }[]) ?? []).filter((s) => s.done).length, ((i.subtasks as unknown[]) ?? []).length] as [number, number] }))} />
-    ) : <Empty>Este proyecto todavía no tiene tareas.</Empty>;
+    const chosen = sp.sprint ?? (activeSprint ? activeSprint.id : 'all');
+    const cur = sprints.find((x) => x.id === chosen);
+    const boardIssues = chosen === 'all' ? all : chosen === 'backlog' ? all.filter((i) => !i.sprint_id) : all.filter((i) => i.sprint_id === chosen);
+    const st = cur ? sprintStats(cur.id) : null;
+    const left = cur ? daysLeft(cur.end_date) : null;
+    body = (
+      <>
+        <div className="sprint-bar">
+          <nav className="seg" aria-label="Qué tareas ver">
+            {openSprints.map((x) => <Link key={x.id} href={`/p/${p.key}?tab=tablero&sprint=${x.id}`} aria-current={chosen === x.id ? 'page' : undefined}>{x.name}{x.state === 'active' && <span className="live-dot" />}</Link>)}
+            <Link href={`/p/${p.key}?tab=tablero&sprint=backlog`} aria-current={chosen === 'backlog' ? 'page' : undefined}>Sin sprint</Link>
+            <Link href={`/p/${p.key}?tab=tablero&sprint=all`} aria-current={chosen === 'all' ? 'page' : undefined}>Todas</Link>
+          </nav>
+          {cur && st ? (
+            <div className="sprint-info">
+              {cur.goal && <span className="muted">{cur.goal}</span>}
+              <div className="bar" style={{ width: 120 }}><i style={{ width: Math.max(st.pct, 2) + '%', background: p.color }} /></div>
+              <span className="num">{st.pct}%</span>
+              {left !== null && <span className={'tag ' + (left < 0 ? 'bad' : left <= 2 ? 'warn' : '')}>{cur.state === 'planned' ? 'Sin empezar' : left < 0 ? `Vencido hace ${-left} d` : left === 0 ? 'Termina hoy' : `${left} días restantes`}</span>}
+            </div>
+          ) : !sprints.length && canEdit ? <Link className="link" href={`/p/${p.key}?tab=sprints`}>Organiza las tareas en sprints</Link> : null}
+        </div>
+        {boardIssues.length || canEdit ? (
+          <Board key={chosen} project={p.key} canEdit={canEdit} epics={eps.map((e) => ({ id: e.id, name: e.name }))} people={people}
+            issues={boardIssues.map((i) => ({ key: i.key, title: i.title, status: i.status, priority: i.priority, due_date: i.due_date, epic_id: i.epic_id, epic: epicName(i.epic_id), assignee_id: i.assignee_id,
+              subtasks: [((i.subtasks as { done: boolean }[]) ?? []).filter((x) => x.done).length, ((i.subtasks as unknown[]) ?? []).length] as [number, number] }))} />
+        ) : <Empty>No hay tareas aquí.</Empty>}
+      </>
+    );
   } else if (tab === 'backlog') {
-    const groups = [...eps.map((e) => ({ name: `${e.key} · ${e.name}`, items: all.filter((i) => i.epic_id === e.id) })), { name: 'Sin épica', items: all.filter((i) => !i.epic_id) }].filter((g) => g.items.length);
-    body = groups.length ? (
+    const groups = [
+      ...openSprints.map((x) => ({ id: x.id, name: x.name, sub: x.state === 'active' ? 'Activo' : 'Planeado', items: all.filter((i) => i.sprint_id === x.id) })),
+      { id: 'backlog', name: 'Backlog', sub: 'Sin sprint', items: all.filter((i) => !i.sprint_id || sprints.find((x) => x.id === i.sprint_id)?.state === 'closed').filter((i) => i.status !== 'done' || !i.sprint_id) },
+    ];
+    body = all.length ? (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        {!sprints.length && canEdit && <div className="callout inline" style={{ justifyContent: 'space-between' }}><span>Divide el trabajo en entregas: crea un sprint y pásale las tareas que harás en esas semanas.</span><Link className="pill mini" href={`/p/${p.key}?tab=sprints`}>Crear sprint</Link></div>}
         {groups.map((g) => (
-          <div className="bl-group" key={g.name}>
-            <div className="bl-head"><b>{g.name}</b><span className="muted num" style={{ fontSize: 12.5 }}>{g.items.filter((i) => i.status === 'done').length}/{g.items.length} hechas</span></div>
-            {g.items.map((i) => (
-              <Link key={i.key} href={`/t/${i.key}`} className="bl-row">
+          <div className="bl-group" key={g.id}>
+            <div className="bl-head"><b>{g.name}</b><span className="tag">{g.sub}</span><span className="muted num" style={{ fontSize: 12.5, marginLeft: 'auto' }}>{g.items.filter((i) => i.status === 'done').length}/{g.items.length} hechas</span></div>
+            {g.items.length ? g.items.map((i) => (
+              <div key={i.key} className="bl-row bl-row-sp">
                 <span className="key">{i.key}</span>
-                <span style={{ overflowWrap: 'anywhere' }}>{i.title}</span>
+                <Link href={`/t/${i.key}`} className="bl-title">{i.title}{i.epic_id && <small className="epic-chip">{epicName(i.epic_id)}</small>}</Link>
                 <span className={'tag hide-s ' + (i.status === 'done' ? 'ok' : i.status === 'progress' ? 'v' : i.status === 'review' ? 'warn' : '')}>{STATUS[i.status]}</span>
                 <span className={'prio ' + i.priority} title={PRIORITY[i.priority]} />
-              </Link>
-            ))}
+                {canEdit && openSprints.length > 0 ? <SprintPicker issue={i.key} value={openSprints.some((x) => x.id === i.sprint_id) ? i.sprint_id : null} sprints={openSprints.map((x) => ({ id: x.id, name: x.name }))} /> : <span />}
+              </div>
+            )) : <p className="muted" style={{ padding: '12px 16px', fontSize: 13 }}>{g.id === 'backlog' ? 'Todo está asignado a un sprint.' : 'Sin tareas. Pásale tareas desde el Backlog con el selector de cada fila.'}</p>}
           </div>
         ))}
       </div>
     ) : <Empty>Sin tareas todavía.</Empty>;
+  } else if (tab === 'sprints') {
+    const n = sprints.length + 1;
+    const end = addDays(todayISO(), 14);
+    body = (
+      <div className="sprints">
+        {flash}
+        {sprints.length === 0 && <div className="callout">Un sprint es una entrega con fecha: eliges las tareas que harás en ese tiempo (normalmente 1 o 2 semanas), las trabajas en el tablero y al final lo cierras. Lo que no se terminó pasa al siguiente.</div>}
+        {[...sprints].sort((a, b) => ({ active: 0, planned: 1, closed: 2 } as Record<string, number>)[a.state] - ({ active: 0, planned: 1, closed: 2 } as Record<string, number>)[b.state]).map((x) => {
+          const stx = sprintStats(x.id);
+          const left = daysLeft(x.end_date);
+          const pending = stx.its.filter((i) => i.status !== 'done').length;
+          return (
+            <section key={x.id} className={'sprint-card ' + x.state}>
+              <div className="sc-head">
+                <div>
+                  <div className="inline"><b>{x.name}</b><span className={'tag ' + (x.state === 'active' ? 'v' : x.state === 'closed' ? 'ok' : '')}>{x.state === 'active' ? 'Activo' : x.state === 'closed' ? 'Cerrado' : 'Planeado'}</span></div>
+                  {x.goal && <p className="muted">{x.goal}</p>}
+                </div>
+                <span className="note num">{x.start_date ? fmtDate(x.start_date) : 'Sin inicio'} – {x.end_date ? fmtDate(x.end_date) : 'sin fin'}{x.state === 'active' && left !== null ? ` · ${left < 0 ? `vencido hace ${-left} d` : `${left} días restantes`}` : ''}</span>
+              </div>
+              <div className="sc-progress">
+                <div className="bar"><i style={{ width: Math.max(stx.pct, 2) + '%', background: x.state === 'closed' ? 'var(--ok)' : p.color }} /></div>
+                <span className="num muted">{stx.d} de {stx.its.length} tareas · {stx.pct}%</span>
+              </div>
+              {canEdit && x.state !== 'closed' && (
+                <div className="sc-actions">
+                  {x.state === 'planned' && <form action={startSprint}><input type="hidden" name="id" value={x.id} /><input type="hidden" name="project" value={p.key} /><button className="pill solid mini" type="submit" disabled={!!activeSprint}>Empezar sprint</button></form>}
+                  {x.state === 'active' && (
+                    <form action={closeSprint} className="inline">
+                      <input type="hidden" name="id" value={x.id} /><input type="hidden" name="project" value={p.key} />
+                      {pending > 0 && <label className="note">{pending} sin terminar pasan a <select className="inp" name="dest" style={{ width: 'auto', display: 'inline-block', padding: '5px 8px' }}><option value="backlog">Backlog</option>{sprints.filter((y) => y.state === 'planned').map((y) => <option key={y.id} value={y.id}>{y.name}</option>)}</select></label>}
+                      <button className="pill mini" type="submit">Cerrar sprint</button>
+                    </form>
+                  )}
+                  <Link className="link" href={`/p/${p.key}?tab=tablero&sprint=${x.id}`}>Ver en el tablero</Link>
+                  <Link className="link" href={`/p/${p.key}?tab=backlog`}>Agregar tareas</Link>
+                </div>
+              )}
+            </section>
+          );
+        })}
+        {canEdit && (
+          <details className="panel add" open={sprints.length === 0}>
+            <summary className="link" style={{ fontSize: 14 }}>+ Nuevo sprint</summary>
+            <form className="form" action={createSprint}>
+              <input type="hidden" name="project" value={p.key} />
+              <div className="two"><label className="field">Nombre<input name="name" defaultValue={`Sprint ${n}`} required /></label><label className="field">Objetivo (qué se entrega)<input name="goal" placeholder="Ej. Pagos funcionando en producción" /></label></div>
+              <div className="two"><label className="field">Inicio<input type="date" name="start" defaultValue={todayISO()} /></label><label className="field">Fin<input type="date" name="end" defaultValue={end} /></label></div>
+              <button className="pill solid" type="submit" style={{ alignSelf: 'flex-start' }}>Crear sprint</button>
+            </form>
+          </details>
+        )}
+      </div>
+    );
   } else if (tab === 'epicas') {
     body = (
       <div className="ep-cards">
