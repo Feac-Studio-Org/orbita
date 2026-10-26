@@ -23,7 +23,7 @@ export default async function Notifications({ searchParams }: { searchParams: Pr
       <section className="panel">
         <div className="panel-head"><h2>Para ti</h2></div>
         {items?.length ? <div className="list">{items.map((n) => {
-          const href = n.link?.issue ? `/t/${n.link.issue}` : n.link?.channel ? `/mensajes?canal=${n.link.channel}` : n.link?.path ?? '/notificaciones';
+          const href = n.link?.issue ? `/t/${n.link.issue}` : n.link?.call ? `/llamada/${n.link.call}` : n.link?.channel ? `/mensajes?canal=${n.link.channel}` : n.link?.path ?? '/notificaciones';
           return (
             <form key={n.id} action={openNotification}>
               <input type="hidden" name="id" value={n.id} /><input type="hidden" name="href" value={href} />

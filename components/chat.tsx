@@ -66,8 +66,8 @@ export function ChatRoom({ channelId, channelName, initial, people, me }: { chan
       <div className="chat-list" ref={list}>
         {!msgs.length && (
           <div className="chat-empty">
-            <b># {channelName}</b>
-            <p>Este es el comienzo del canal. Escribe el primer mensaje o inicia una llamada.</p>
+            <b>{channelName}</b>
+            <p>Este es el comienzo de la conversación. Escribe el primer mensaje o inicia una llamada.</p>
           </div>
         )}
         {msgs.map((m, i) => {
@@ -93,7 +93,7 @@ export function ChatRoom({ channelId, channelName, initial, people, me }: { chan
       <div className="composer">
         {error && <p className="err" role="alert">{error}</p>}
         <div className="composer-box">
-          <textarea ref={box} rows={1} value={text} placeholder={`Escribe en # ${channelName}`} aria-label="Mensaje"
+          <textarea ref={box} rows={1} value={text} placeholder={`Escribe en ${channelName}`} aria-label="Mensaje"
             onChange={(e) => { setText(e.target.value); e.target.style.height = 'auto'; e.target.style.height = Math.min(e.target.scrollHeight, 160) + 'px'; }}
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }} />
           <button className="send" onClick={send} disabled={!text.trim()} aria-label="Enviar">

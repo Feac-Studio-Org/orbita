@@ -3,17 +3,19 @@ import { getContext } from '@/lib/data';
 import { Empty } from '@/components/bits';
 import { Avatar } from '@/components/avatar';
 import { ChatRoom } from '@/components/chat';
-import { createChannel, endCall, startCall } from '@/lib/actions';
+import { createChannel, endCall, openDirect, startCall } from '@/lib/actions';
 
 export const metadata = { title: 'Mensajes' };
 
 export default async function Messages({ searchParams }: { searchParams: Promise<{ canal?: string; error?: string }> }) {
   const { canal, error } = await searchParams;
   const { supabase, spaces, projects, user, profile } = await getContext();
-  const { data: channels } = await supabase.from('channels').select('id, name, space_id, project_id').order('name');
+  const { data: channels } = await supabase.from('channels').select('id, name, space_id, project_id, kind, created_at').order('name');
+  const { data: parts } = await supabase.from('channel_participants').select('channel_id, user_id');
+  const { data: contacts } = await supabase.rpc('my_contacts');
   const current = channels?.find((c) => c.id === canal) ?? channels?.[0];
   const teams = spaces.filter((s) => s.kind === 'team');
-  const since = new Date(Date.now() - 4 * 3600 * 1000).toISOString();
+  const since = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
 
   const [{ data: msgs }, { data: calls }, { data: sm }, { data: pa }] = current ? await Promise.all([
     supabase.from('messages').select('id, body, author_id, author_kind, created_at').eq('channel_id', current.id).order('created_at', { ascending: false }).limit(150),
@@ -22,22 +24,48 @@ export default async function Messages({ searchParams }: { searchParams: Promise
     current.project_id ? supabase.from('project_access').select('user_id').eq('project_id', current.project_id) : Promise.resolve({ data: [] as { user_id: string }[] }),
   ]) : [{ data: [] }, { data: [] }, { data: [] }, { data: [] }];
   const access = new Set((pa ?? []).map((a) => a.user_id));
-  const memberIds = (sm ?? []).filter((m) => !current?.project_id || ['owner', 'partner'].includes(m.role) || access.has(m.user_id)).map((m) => m.user_id);
+  const isDirect = current?.kind === 'direct';
+  const memberIds = isDirect ? (parts ?? []).filter((x) => x.channel_id === current!.id).map((x) => x.user_id)
+    : (sm ?? []).filter((m) => !current?.project_id || ['owner', 'partner'].includes(m.role) || access.has(m.user_id)).map((m) => m.user_id);
+  const contactName = (uid: string) => (contacts as { id: string; full_name: string | null; avatar_url: string | null }[] | null)?.find((c) => c.id === uid);
+  const directs = (channels ?? []).filter((c) => c.kind === 'direct').map((c) => {
+    const others = (parts ?? []).filter((x) => x.channel_id === c.id && x.user_id !== user.id).map((x) => contactName(x.user_id));
+    return { ...c, label: others.map((o) => o?.full_name || 'Sin nombre').join(', ') || 'Solo tú', avatar: others[0] ?? null, group: others.length > 1 };
+  });
   const ids = [...new Set([...memberIds, ...(msgs ?? []).map((m) => m.author_id).filter(Boolean)])] as string[];
   const { data: profs } = ids.length ? await supabase.from('profiles').select('id, full_name, avatar_url').in('id', ids) : { data: [] };
   const people = (profs ?? []).map((p) => ({ id: p.id, name: p.full_name || 'Sin nombre', avatar: p.avatar_url }));
   const members = people.filter((p) => memberIds.includes(p.id));
-  const meetUrl = (room: string) => `https://meet.jit.si/${room}#userInfo.displayName=${encodeURIComponent(JSON.stringify(profile?.full_name ?? ''))}&config.prejoinConfig.enabled=false`;
   const projectOf = (pid: string | null) => projects.find((p) => p.id === pid);
-  const where = current ? (projectOf(current.project_id)?.name ?? spaces.find((s) => s.id === current.space_id)?.name ?? '') : '';
+  const where = current ? (isDirect ? (memberIds.length > 2 ? 'Grupo directo' : 'Mensaje directo') : projectOf(current.project_id)?.name ?? spaces.find((s) => s.id === current.space_id)?.name ?? '') : '';
+  const title = isDirect ? directs.find((d) => d.id === current!.id)?.label ?? 'Directo' : `# ${current?.name ?? ''}`;
 
   return (
     <div className="chat">
       <aside className="chat-side">
         <div className="chat-side-head"><h1>Mensajes</h1></div>
         <div className="chat-channels">
+          <div className="chat-group">
+            <span className="label">Directos</span>
+            {directs.map((d) => (
+              <Link key={d.id} href={`/mensajes?canal=${d.id}`} className="chat-ch dm" aria-current={d.id === current?.id ? 'page' : undefined}>
+                {d.group ? <span className="hash">+</span> : <Avatar name={d.avatar?.full_name} url={d.avatar?.avatar_url} size={20} />}
+                <span className="chat-ch-name">{d.label}</span>
+              </Link>
+            ))}
+            {(contacts as unknown[] | null)?.length ? (
+              <details className="chat-new"><summary>+ Nuevo mensaje directo</summary>
+                <form className="form dm-form" action={openDirect}>
+                  {(contacts as { id: string; full_name: string | null; avatar_url: string | null }[]).map((c) => (
+                    <label key={c.id} className="dm-pick"><input type="checkbox" name="person" value={c.id} /><Avatar name={c.full_name} url={c.avatar_url} size={22} /><span>{c.full_name || 'Sin nombre'}</span></label>
+                  ))}
+                  <button className="pill mini" type="submit">Abrir conversación</button>
+                </form>
+              </details>
+            ) : <span className="note" style={{ padding: '2px 10px' }}>Invita personas a tus espacios para escribirles.</span>}
+          </div>
           {teams.map((s) => {
-            const list = (channels ?? []).filter((c) => c.space_id === s.id);
+            const list = (channels ?? []).filter((c) => c.space_id === s.id && c.kind !== 'direct');
             return (
               <div key={s.id} className="chat-group">
                 <span className="label">{s.name}</span>
@@ -67,7 +95,7 @@ export default async function Messages({ searchParams }: { searchParams: Promise
         <section className="chat-main">
           <header className="chat-head">
             <div className="chat-title">
-              <h2># {current.name}</h2>
+              <h2>{title}</h2>
               <span className="note">{where} · {members.length} {members.length === 1 ? 'persona' : 'personas'}</span>
             </div>
             <div className="avatars hide-s" title={members.map((m) => m.name).join(', ')}>{members.slice(0, 5).map((m) => <Avatar key={m.id} name={m.name} url={m.avatar} size={28} />)}</div>
@@ -80,11 +108,11 @@ export default async function Messages({ searchParams }: { searchParams: Promise
             <div key={c.id} className="call-bar">
               <span className="live-dot" />
               <div><b>Llamada en curso</b><span className="note"> · desde las {new Date(c.started_at).toLocaleTimeString('es-CO', { timeZone: 'America/Bogota', hour: 'numeric', minute: '2-digit' })} · voz, video y pantalla</span></div>
-              <a className="pill solid mini" href={meetUrl(c.room)} target="_blank" rel="noreferrer">Unirme</a>
+              <Link className="pill solid mini" href={`/llamada/${c.id}`}>Unirme</Link>
               <form action={endCall}><input type="hidden" name="id" value={c.id} /><input type="hidden" name="channel" value={current.id} /><button className="pill mini" type="submit">Terminar</button></form>
             </div>
           ))}
-          <ChatRoom key={current.id} channelId={current.id} channelName={current.name} initial={(msgs ?? []).slice().reverse()} people={people} me={user.id} />
+          <ChatRoom key={current.id} channelId={current.id} channelName={isDirect ? title : `# ${current.name}`} initial={(msgs ?? []).slice().reverse()} people={people} me={user.id} />
         </section>
       ) : <section className="chat-main"><Empty>No tienes canales todavía. Crea uno en un espacio de equipo.</Empty></section>}
     </div>

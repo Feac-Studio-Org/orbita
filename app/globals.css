@@ -533,3 +533,36 @@ details.add[open] > summary { margin-bottom: 12px; }
   .bl-row-sp { grid-template-columns: minmax(0, 1fr) 110px; }
   .bl-row-sp > .key, .bl-row-sp > .prio, .bl-row-sp > .tag { display: none; }
 }
+
+/* ---------- Directos y llamada ---------- */
+.chat-ch.dm { grid-template-columns: 20px minmax(0, 1fr); }
+.dm-form { max-height: 260px; overflow-y: auto; }
+.dm-pick { display: flex; align-items: center; gap: 8px; font-size: 13px; padding: 4px 0; cursor: pointer; }
+.dm-pick input { accent-color: var(--violet); }
+.call { display: flex; flex-direction: column; gap: 16px; min-height: calc(100dvh - 140px); }
+.call-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.call-top b { font-size: 18px; font-weight: 600; display: block; }
+.tiles { flex: 1; display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr); align-content: center; }
+.tiles.n2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.tiles.n3, .tiles.n4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.tiles.n5, .tiles.n6 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.tiles.n1 .tile { max-width: 960px; justify-self: center; width: 100%; }
+.tile { position: relative; aspect-ratio: 16 / 10; border-radius: 18px; overflow: hidden; background: radial-gradient(circle at 50% 40%, var(--ink-4), var(--ink-2)); border: 1px solid var(--line); }
+.tile video { width: 100%; height: 100%; object-fit: cover; background: #000; }
+.tile.screen video { object-fit: contain; }
+.tile-avatar { position: absolute; inset: 0; display: grid; place-items: center; }
+.tile-avatar img, .tile-avatar span { width: 96px; height: 96px; border-radius: 50%; object-fit: cover; display: grid; place-items: center; font-size: 36px; font-weight: 600; background: linear-gradient(135deg, var(--violet-deep), var(--violet)); box-shadow: 0 0 0 8px rgba(157, 78, 221, .12); }
+.tile-name { position: absolute; left: 12px; bottom: 12px; display: flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 99px; background: rgba(10, 9, 12, .7); backdrop-filter: blur(6px); font-size: 13px; }
+.tile-name svg { width: 15px; height: 15px; color: var(--bad); }
+.call-controls { display: flex; justify-content: center; align-items: center; gap: 12px; flex-wrap: wrap; padding: 6px 0 4px; }
+.cc { width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; background: var(--ink-3); border: 1px solid var(--line-2); transition: background .15s, transform .15s; }
+.cc:hover { transform: translateY(-2px); background: var(--ink-4); }
+.cc.off { background: var(--paper); color: var(--ink); }
+.cc.on { background: var(--violet); border-color: var(--violet); }
+.cc.hang { background: var(--bad); border-color: var(--bad); color: #fff; width: 64px; border-radius: 26px; }
+.cc:disabled { opacity: .35; }
+.call-ended { display: grid; place-items: center; gap: 14px; min-height: 50vh; text-align: center; }
+@media (max-width: 760px) {
+  .tiles.n2, .tiles.n3, .tiles.n4, .tiles.n5, .tiles.n6 { grid-template-columns: minmax(0, 1fr); }
+  .tile { aspect-ratio: 4 / 3; }
+}

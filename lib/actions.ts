@@ -335,12 +335,12 @@ export async function startCall(f: FormData) {
   if (error) back(`/mensajes?canal=${channel}`, 'No se pudo iniciar la llamada: ' + error.message);
   await supabase.from('messages').insert({ channel_id: channel, author_id: user.id, body: 'Inició una llamada.' });
   revalidatePath('/mensajes');
-  redirect(`/mensajes?canal=${channel}&llamada=${data!.id}`);
+  redirect(`/llamada/${data!.id}`);
 }
 
 export async function endCall(f: FormData) {
   const { supabase } = await requireUser();
-  await supabase.from('calls').update({ ended_at: new Date().toISOString() }).eq('id', s(f, 'id'));
+  await supabase.from('calls').update({ ended_at: new Date().toISOString() }).eq('id', s(f, 'id')).is('ended_at', null);
   revalidatePath('/mensajes');
   redirect(`/mensajes?canal=${s(f, 'channel')}`);
 }
@@ -452,4 +452,13 @@ export async function setIssueSprint(key: string, sprintId: string | null) {
   if (error) return { error: error.message };
   revalidatePath('/', 'layout');
   return { success: true };
+}
+
+export async function openDirect(f: FormData) {
+  const { supabase } = await requireUser();
+  const people = f.getAll('person').map(String).filter((x) => /^[0-9a-f-]{36}$/.test(x));
+  const { data, error } = await supabase.rpc('open_direct', { others: people });
+  if (error) back('/mensajes', error.message);
+  revalidatePath('/mensajes');
+  redirect(`/mensajes?canal=${data}`);
 }
