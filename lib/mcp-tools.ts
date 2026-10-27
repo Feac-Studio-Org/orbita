@@ -50,6 +50,28 @@ export const TOOLS: Tool[] = [
     rpc: 'mcp_crear_tarea', args: (a) => ({ p_proyecto: a.proyecto, p_titulo: a.titulo, p_descripcion: a.descripcion ?? '', p_prioridad: a.prioridad ?? 'medium', p_fecha: a.fecha ?? null, p_epica: a.epica ?? null }),
   },
   {
+    name: 'ver_proyecto', description: 'Resumen de un proyecto: estado, tareas por estado, épicas con avance, sprint activo y lista de documentos. Úsala al empezar a trabajar en un proyecto.',
+    inputSchema: { type: 'object', properties: { proyecto: { type: 'string', description: 'Clave del proyecto, p. ej. GG' } }, required: ['proyecto'] },
+    rpc: 'mcp_proyecto', args: (a) => ({ p_proyecto: a.proyecto }),
+  },
+  {
+    name: 'leer_documento', description: 'Lee una página de la documentación de un proyecto (Markdown). Busca por título exacto o parecido.',
+    inputSchema: { type: 'object', properties: {
+      proyecto: { type: 'string', description: 'Clave del proyecto' },
+      titulo: { type: 'string', description: 'Título de la página, p. ej. "Prompt para continuar"' },
+    }, required: ['proyecto', 'titulo'] },
+    rpc: 'mcp_leer_documento', args: (a) => ({ p_proyecto: a.proyecto, p_titulo: a.titulo }),
+  },
+  {
+    name: 'guardar_documento', description: 'Crea o reemplaza completa una página de documentación de un proyecto (Markdown). La versión anterior queda en el historial. Lee la página antes de reemplazarla.',
+    inputSchema: { type: 'object', properties: {
+      proyecto: { type: 'string', description: 'Clave del proyecto' },
+      titulo: { type: 'string', description: 'Título de la página' },
+      contenido: { type: 'string', description: 'Contenido completo en Markdown' },
+    }, required: ['proyecto', 'titulo', 'contenido'] },
+    rpc: 'mcp_guardar_documento', args: (a) => ({ p_proyecto: a.proyecto, p_titulo: a.titulo, p_contenido: a.contenido }),
+  },
+  {
     name: 'anotar_gasto', description: 'Anota un gasto o suscripción en las finanzas de un espacio (requiere permiso de finanzas).',
     inputSchema: { type: 'object', properties: {
       espacio: { type: 'string', description: 'Nombre del espacio, p. ej. Personal' },
