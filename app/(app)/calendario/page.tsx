@@ -101,7 +101,7 @@ export default async function Calendar({ searchParams }: { searchParams: Promise
         const live = (b: { weekdays: number[]; ends_on: string | null; starts_on: string | null }, d: string) => b.weekdays.includes(isoWeekday(d)) && (!b.ends_on || b.ends_on >= d) && (!b.starts_on || b.starts_on <= d);
         // Todos tus hábitos (también los de espacios de hábitos). Si un bloque empieza a la misma hora que un hábito, se marca una sola vez.
         const hs = ((myHabits ?? []) as Habit[]).filter((h) => isDue(h, today));
-        const todays = (blocks ?? []).filter((b) => live(b, today) && b.kind !== 'class' && !hs.some((h) => h.at_time && h.at_time.slice(0, 5) === String(b.start_time).slice(0, 5)));
+        const todays = (blocks ?? []).filter((b) => live(b, today) && !hs.some((h) => h.at_time && h.at_time.slice(0, 5) === String(b.start_time).slice(0, 5)));
         const hc = (hchecks ?? []) as Check[];
         const total = todays.length + hs.length;
         const doneN = todays.filter((b) => (bchecks ?? []).some((c) => c.block_id === b.id && c.day === today)).length + hs.filter((h) => hc.some((c) => c.habit_id === h.id && c.day === today)).length;
@@ -109,7 +109,7 @@ export default async function Calendar({ searchParams }: { searchParams: Promise
         let wDue = 0, wGot = 0;
         for (const d of week) {
           if (d > today) break;
-          for (const b of (blocks ?? []).filter((x) => live(x, d) && x.kind !== 'class' && !((myHabits ?? []) as Habit[]).some((h) => isDue(h, d) && h.at_time && h.at_time.slice(0, 5) === String(x.start_time).slice(0, 5)))) { wDue++; if ((bchecks ?? []).some((c) => c.block_id === b.id && c.day === d)) wGot++; }
+          for (const b of (blocks ?? []).filter((x) => live(x, d) && !((myHabits ?? []) as Habit[]).some((h) => isDue(h, d) && h.at_time && h.at_time.slice(0, 5) === String(x.start_time).slice(0, 5)))) { wDue++; if ((bchecks ?? []).some((c) => c.block_id === b.id && c.day === d)) wGot++; }
           for (const h of ((myHabits ?? []) as Habit[]).filter((x) => isDue(x, d))) { wDue++; if (hc.some((c) => c.habit_id === h.id && c.day === d)) wGot++; }
         }
         const pct = total ? Math.round((doneN / total) * 100) : 0;
@@ -122,12 +122,12 @@ export default async function Calendar({ searchParams }: { searchParams: Promise
             <div className="hbp-bar big"><i style={{ width: `${pct}%` }} /></div>
             {total ? (
               <div className="ht-grid">
-                {[...todays.map((b) => ({ t: b.start_time as string, el: <HabitToggle key={'b' + b.id} block={b.id} day={today} done={(bchecks ?? []).some((c) => c.block_id === b.id && c.day === today)} title={b.title} sub={`${hhmm(b.start_time)} – ${hhmm(b.end_time)}`} color={b.kind === 'work' ? '#5fa8f5' : b.kind === 'routine' ? '#9a92a8' : b.kind === 'review' ? '#4cc38a' : '#c77dff'} icon={b.kind === 'work' ? 'briefcase' : b.kind === 'routine' ? 'dumbbell' : b.title.toLowerCase().includes('trading') ? 'chart' : b.title.toLowerCase().includes('ingl') ? 'globe' : 'book'} /> })),
+                {[...todays.map((b) => ({ t: b.start_time as string, el: <HabitToggle key={'b' + b.id} block={b.id} day={today} done={(bchecks ?? []).some((c) => c.block_id === b.id && c.day === today)} title={b.title} sub={`${hhmm(b.start_time)} – ${hhmm(b.end_time)}`} color={b.kind === 'class' ? (b.tag === 'UAO' ? '#cfaf6e' : '#ec6f86') : b.kind === 'work' ? '#5fa8f5' : b.kind === 'routine' ? '#9a92a8' : b.kind === 'review' ? '#4cc38a' : '#c77dff'} icon={b.kind === 'class' ? 'book' : b.kind === 'work' ? 'briefcase' : b.kind === 'routine' ? 'dumbbell' : b.title.toLowerCase().includes('trading') ? 'chart' : b.title.toLowerCase().includes('ingl') ? 'globe' : 'book'} /> })),
                   ...hs.map((h) => ({ t: h.at_time ?? '99', el: <HabitToggle key={'h' + h.id} habit={h.id} day={today} done={hc.some((c) => c.habit_id === h.id && c.day === today)} title={h.title} sub={h.at_time ? hhmm(h.at_time) : 'Hábito'} color={h.color} icon={h.icon} /> }))]
                   .sort((a, b) => a.t.localeCompare(b.t)).map((x) => x.el)}
               </div>
             ) : <p className="muted">Hoy no tienes bloques ni hábitos.</p>}
-            <p className="note">Las clases no se marcan. Toca un bloque o hábito cuando lo cumplas.</p>
+            <p className="note">Toca cada cosa cuando la cumplas: la clase recibida, el gimnasio, la jornada de trabajo o un hábito.</p>
           </section>
         );
       })()}
