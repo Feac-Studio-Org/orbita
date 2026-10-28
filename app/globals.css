@@ -752,3 +752,4 @@ details.add[open] > summary { margin-bottom: 12px; }
   .hbd-row .tag { display: none; }
   .hb-heat-row { grid-template-columns: minmax(0, 1fr); }
 }
+.ev.event { background: color-mix(in srgb, var(--evc, var(--violet-hi)) 22%, transparent); border-color: var(--evc, var(--violet-hi)); }

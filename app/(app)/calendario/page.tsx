@@ -3,6 +3,8 @@ import { getContext } from '@/lib/data';
 import { DAYS, MES, addDays, hhmm, isoWeekday, todayISO } from '@/lib/format';
 import { accessToken, googleConfigured, listEvents, type GEvent } from '@/lib/google';
 import { addBlockWithGoogle, disconnectGoogle, removeBlock } from '@/lib/calendar-actions';
+import { deleteEvent, saveEvent } from '@/lib/actions';
+import { type Ev, REMIND, REPEAT, bogota, occursOn } from '@/lib/events';
 import { ViewHead } from '@/components/bits';
 import { HabitToggle } from '@/components/habit-toggle';
 import { HabitWizard } from '@/components/habit-wizard';
@@ -10,7 +12,7 @@ import { type Check, type Habit, isDue } from '@/lib/habits';
 
 export const metadata = { title: 'Calendario' };
 
-type Item = { id?: string; title: string; start: number; end: number; cls: string; time: string; google?: boolean; gcal?: string | null };
+type Item = { id?: string; title: string; start: number; end: number; cls: string; time: string; google?: boolean; gcal?: string | null; color?: string; event?: Ev };
 const S = 5.5, E = 23, PX = 38;
 const toH = (t: string) => { const [h, m] = t.split(':').map(Number); return h + m / 60; };
 
@@ -23,13 +25,16 @@ export default async function Calendar({ searchParams }: { searchParams: Promise
   const week = Array.from({ length: 7 }, (_, i) => addDays(monday, i));
   const personal = spaces.find((s) => s.kind === 'personal');
 
-  const [{ data: blocks }, { data: status }, { data: myHabits }, { data: hchecks }, { data: bchecks }] = await Promise.all([
+  const [{ data: blocks }, { data: status }, { data: myHabits }, { data: hchecks }, { data: bchecks }, { data: eventsRaw }] = await Promise.all([
     supabase.from('schedule_blocks').select('*').order('start_time'),
     supabase.rpc('google_connection_status'),
     supabase.from('habits').select('*').eq('user_id', user.id).is('archived_at', null).order('at_time'),
     supabase.from('habit_checks').select('habit_id, day, user_id, done_at').gte('day', monday < today ? monday : today),
     supabase.from('block_checks').select('block_id, day').gte('day', monday < today ? monday : today),
+    supabase.from('events').select('*').eq('user_id', user.id).order('starts_at'),
   ]);
+  const evs = (eventsRaw ?? []) as Ev[];
+  const googleReady = googleConfigured();
   const conn = (status as { connected: boolean; google_email: string }[] | null)?.[0];
 
   let gEvents: GEvent[] = [];
@@ -46,6 +51,11 @@ export default async function Calendar({ searchParams }: { searchParams: Promise
     const own: Item[] = (blocks ?? [])
       .filter((b) => b.weekdays.includes(wd) && (!b.ends_on || b.ends_on >= date) && (!b.starts_on || b.starts_on <= date))
       .map((b) => ({ id: b.id, title: b.title, start: toH(b.start_time), end: toH(b.end_time), cls: b.kind + (b.tag === 'UAO' ? ' uao' : ''), time: `${hhmm(b.start_time)} – ${hhmm(b.end_time)}`, gcal: b.gcal_event_id }));
+    const mine: Item[] = evs.filter((e) => occursOn(e, date)).map((e) => {
+      const st = bogota(e.starts_at).time, en = bogota(e.ends_at).time;
+      return { title: e.title, start: e.all_day ? S : toH(st), end: e.all_day ? S + 0.5 : Math.max(toH(en), toH(st) + 0.5), cls: 'event', time: e.all_day ? 'Todo el día' : `${hhmm(st)} – ${hhmm(en)}`, color: e.color, event: e };
+    });
+    own.push(...mine);
     const fromGoogle: Item[] = [];
     const allDay: string[] = [];
     for (const e of gEvents) {
@@ -122,7 +132,7 @@ export default async function Calendar({ searchParams }: { searchParams: Promise
         );
       })()}
 
-      <section className="panel">
+      {googleReady && <section className="panel">
         <div className="panel-head">
           <h2>Google Calendar</h2>
           {conn ? (
@@ -134,7 +144,7 @@ export default async function Calendar({ searchParams }: { searchParams: Promise
         <p className="muted" style={{ fontSize: 13.5 }}>
           {conn ? `Ves los eventos de ${conn.google_email}. Los bloques nuevos pueden crearse también en Google Calendar.` : 'Conecta tu cuenta de Google para ver tus eventos aquí y crear bloques que se repiten cada semana en tu calendario. Cada persona conecta la suya.'}
         </p>
-      </section>
+      </section>}
 
       <div className="legend">
         <span><i style={{ background: 'rgba(236,111,134,.5)' }} />Universidad del Valle</span>
@@ -143,6 +153,7 @@ export default async function Calendar({ searchParams }: { searchParams: Promise
         <span><i style={{ background: 'rgba(76,195,138,.5)' }} />Revisión</span>
         <span><i style={{ background: '#221e2a' }} />Rutina</span>
         <span><i style={{ background: 'rgba(95,168,245,.5)' }} />Trabajo</span>
+        <span><i style={{ background: 'rgba(199,125,255,.75)' }} />Eventos</span>
         {conn && <span><i style={{ background: 'rgba(95,201,192,.5)' }} />Google Calendar</span>}
       </div>
 
@@ -157,7 +168,7 @@ export default async function Calendar({ searchParams }: { searchParams: Promise
               {items.map((it, n) => {
                 const w = 100 / it.lanes;
                 return (
-                  <div key={n} className={'ev ' + it.cls} title={`${it.title} · ${it.time}`} style={{ top: (it.start - S) * PX, height: Math.max((it.end - it.start) * PX - 3, 18), left: `calc(${it.lane * w}% + 2px)`, width: `calc(${w}% - 4px)` }}>
+                  <div key={n} className={'ev ' + it.cls} title={`${it.title} · ${it.time}`} style={{ top: (it.start - S) * PX, height: Math.max((it.end - it.start) * PX - 3, 18), left: `calc(${it.lane * w}% + 2px)`, width: `calc(${w}% - 4px)`, ...(it.color ? { ['--evc' as string]: it.color } : {}) }}>
                     <b>{it.title}</b>{(it.end - it.start) * PX > 34 && <span className="num">{it.time}</span>}
                   </div>
                 );
@@ -178,6 +189,36 @@ export default async function Calendar({ searchParams }: { searchParams: Promise
       </div>
 
       <div className="grid g-2">
+        <details className="panel add" open={!evs.length}>
+          <summary className="link" style={{ fontSize: 14 }}>+ Nuevo evento</summary>
+          <form className="form" action={saveEvent}>
+            <label className="field">Título<input name="title" required maxLength={120} placeholder="Ej.: Reunión con el cliente" /></label>
+            <div className="two"><label className="field">Fecha<input type="date" name="date" required defaultValue={today} /></label><label className="check" style={{ alignSelf: 'end' }}><input type="checkbox" name="all_day" />Todo el día</label></div>
+            <div className="two"><label className="field">Desde<input type="time" name="start" defaultValue="09:00" /></label><label className="field">Hasta<input type="time" name="end" defaultValue="10:00" /></label></div>
+            <div className="two">
+              <label className="field">Repetir<select name="repeat">{Object.entries(REPEAT).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></label>
+              <label className="field">Aviso<select name="remind" defaultValue="10">{REMIND.map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></label>
+            </div>
+            <div className="two"><label className="field">Lugar<input name="location" /></label><label className="field">Color<input type="color" name="color" defaultValue="#c77dff" /></label></div>
+            <label className="field">Notas<input name="notes" /></label>
+            <button className="pill solid" type="submit" style={{ alignSelf: 'flex-start' }}>Guardar evento</button>
+          </form>
+        </details>
+        {evs.length > 0 && (
+          <details className="panel add">
+            <summary className="link" style={{ fontSize: 14 }}>Tus eventos ({evs.length})</summary>
+            <div className="list">
+              {evs.map((e) => (
+                <form key={e.id} action={deleteEvent} className="row" style={{ gridTemplateColumns: '10px minmax(0,1fr) auto' }}>
+                  <input type="hidden" name="id" value={e.id} />
+                  <i style={{ width: 10, height: 10, borderRadius: 3, background: e.color }} />
+                  <div className="t"><b>{e.title}</b><span>{bogota(e.starts_at).date}{e.all_day ? ' · todo el día' : ` · ${hhmm(bogota(e.starts_at).time)}`} · {REPEAT[e.repeat]}</span></div>
+                  <button className="pill mini danger" type="submit">Eliminar</button>
+                </form>
+              ))}
+            </div>
+          </details>
+        )}
         {personal && (
           <details className="panel add">
             <summary className="link" style={{ fontSize: 14 }}>+ Nuevo bloque semanal</summary>

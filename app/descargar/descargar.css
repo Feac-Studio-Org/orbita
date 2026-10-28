@@ -8,7 +8,7 @@
 .dl-hero h1 em { font-family: var(--f-serif); font-weight: 400; color: var(--violet-hi); }
 .dl-hero p { color: var(--mute); max-width: 56ch; font-size: 16px; }
 .dl-detect { color: var(--mute); }
-.dl-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+.dl-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
 .dl-card { display: flex; flex-direction: column; gap: 10px; padding: 26px; border-radius: 20px; border: 1px solid var(--line); background: rgba(18, 16, 22, .7); color: var(--paper); }
 .dl-card:target { border-color: var(--violet); }
 .dl-card h2 { font-size: 22px; font-weight: 500; letter-spacing: -.02em; margin-top: 6px; }

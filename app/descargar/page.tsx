@@ -19,6 +19,8 @@ const FILES = [
     icon: <><path d="M12 3c-2 0-3 1.8-3 4 0 1.5.4 2.4-.6 3.9C7.2 12.6 6 14.6 6 16.5c0 .7.2 1.3.5 1.8M12 3c2 0 3 1.8 3 4 0 1.5-.4 2.4.6 3.9 1.2 1.7 2.4 3.7 2.4 5.6 0 .7-.2 1.3-.5 1.8" /><path d="M7 19.5c1 .9 2.6 1.5 5 1.5s4-.6 5-1.5M10.5 7.5h.01M13.5 7.5h.01M11 10h2" /></> },
   { os: 'android', name: 'Android', file: 'orbita.apk', remote: false, note: 'Android 8 o superior · celular', help: 'Ábrelo desde el celular. Si te lo pide, permite instalar apps de esta fuente.',
     icon: <><rect x="6" y="2.5" width="12" height="19" rx="2.5" /><path d="M10.5 18.5h3" /></> },
+  { os: 'calendario', name: 'Órbita Calendario', file: 'orbita-calendario.apk', remote: false, note: 'Android · solo el calendario', help: 'App aparte, liviana. Entras con tu misma cuenta de Órbita y todo queda sincronizado.',
+    icon: <><rect x="4" y="5" width="16" height="15" rx="2.5" /><path d="M4 10h16M9 3v4M15 3v4" /></> },
 ];
 
 const SIZES: Record<string, string> = { 'Orbita-Windows-Instalador.exe': '115 MB', 'Orbita-Mac.dmg': '213 MB', 'Orbita-linux-x86_64.AppImage': '126 MB' };

@@ -568,3 +568,33 @@ export async function sendNudge(to: string, habitId: string, message: string) {
   if (error) return { error: error.message };
   return { success: true };
 }
+
+/* ---------- Eventos del calendario ---------- */
+export async function saveEvent(f: FormData) {
+  const { supabase, user } = await requireUser();
+  const id = s(f, 'id');
+  const title = s(f, 'title').slice(0, 120);
+  const date = s(f, 'date');
+  const allDay = f.get('all_day') === 'on';
+  const start = allDay ? '00:00' : s(f, 'start') || '09:00';
+  let end = allDay ? '23:59' : s(f, 'end') || start;
+  if (end < start) end = start;
+  if (!title || !/^\d{4}-\d{2}-\d{2}$/.test(date)) back('/calendario', 'Escribe el título y la fecha del evento.');
+  const repeat = ['none', 'daily', 'weekdays', 'weekly', 'monthly', 'yearly'].includes(s(f, 'repeat')) ? s(f, 'repeat') : 'none';
+  const remind = s(f, 'remind') === '' ? null : Number(s(f, 'remind'));
+  const row = {
+    title, all_day: allDay, starts_at: `${date}T${start}:00-05:00`, ends_at: `${date}T${end}:00-05:00`, repeat, remind_min: remind,
+    location: s(f, 'location'), notes: s(f, 'notes'), color: /^#[0-9a-f]{6}$/i.test(s(f, 'color')) ? s(f, 'color') : '#c77dff', updated_at: new Date().toISOString(),
+  };
+  const { error } = id ? await supabase.from('events').update(row).eq('id', id).eq('user_id', user.id) : await supabase.from('events').insert({ ...row, user_id: user.id });
+  if (error) back('/calendario', 'No se pudo guardar: ' + error.message);
+  revalidatePath('/calendario');
+  back(`/calendario?semana=${date}`, id ? 'Evento actualizado.' : 'Evento creado.', 'ok');
+}
+
+export async function deleteEvent(f: FormData) {
+  const { supabase, user } = await requireUser();
+  await supabase.from('events').delete().eq('id', s(f, 'id')).eq('user_id', user.id);
+  revalidatePath('/calendario');
+  back('/calendario', 'Evento eliminado.', 'ok');
+}
