@@ -2,7 +2,7 @@ import { getContext } from '@/lib/data';
 import { ViewHead } from '@/components/bits';
 import { markAllRead, openNotification, saveNotificationPrefs } from '@/lib/actions';
 
-const KINDS: [string, string][] = [['comment', 'Comentarios en tareas que sigues'], ['status', 'Cambios de estado'], ['assigned', 'Tareas que te asignan'], ['due', 'Vencimientos (hoy y mañana, a las 7:00)'], ['message', 'Mensajes en tus canales'], ['call', 'Llamadas'], ['billing', 'Cobros de suscripciones (3 días antes)'], ['member', 'Alguien se unió a tu espacio']];
+const KINDS: [string, string][] = [['comment', 'Comentarios en tareas que sigues'], ['status', 'Cambios de estado'], ['assigned', 'Tareas que te asignan'], ['due', 'Vencimientos (hoy y mañana, a las 7:00)'], ['message', 'Mensajes en tus canales'], ['call', 'Llamadas'], ['billing', 'Cobros de suscripciones (3 días antes)'], ['member', 'Alguien se unió a tu espacio'], ['habit', 'Alguien de tu grupo cumplió un hábito'], ['nudge', 'Te animan a cumplir un hábito']];
 
 export const metadata = { title: 'Notificaciones' };
 

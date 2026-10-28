@@ -148,9 +148,14 @@ export async function deleteExpense(f: FormData) {
 /* ---------- Espacios, proyectos y miembros ---------- */
 export async function createSpace(f: FormData) {
   const { supabase, user } = await requireUser();
-  const { data, error } = await supabase.from('spaces').insert({ name: s(f, 'name'), description: s(f, 'description'), kind: 'team', created_by: user.id }).select('id').single();
+  const habits = s(f, 'template') === 'habits';
+  const { data, error } = await supabase.from('spaces').insert({
+    name: s(f, 'name'), description: s(f, 'description') || (habits ? 'Hábitos en comunidad' : ''), kind: habits ? 'habits' : 'team', created_by: user.id,
+    modules: habits ? { portfolio: false, finance: false, members: true } : undefined,
+  }).select('id').single();
   if (error) back('/nuevo/espacio', 'No se pudo crear: ' + error.message);
   revalidatePath('/', 'layout');
+  if (habits) redirect(`/habitos/${data!.id}`);
   redirect(`/nuevo/proyecto?espacio=${data!.id}&ok=${encodeURIComponent('Espacio creado. Ahora crea su primer proyecto.')}`);
 }
 
@@ -482,5 +487,84 @@ export async function setProjectLogo(projectId: string, url: string | null) {
   if (error) return { error: error.message };
   if (!data?.length) return { error: 'No tienes permiso para cambiar este proyecto.' };
   revalidatePath('/', 'layout');
+  return { success: true };
+}
+
+/* ---------- Hábitos ---------- */
+export type HabitInput = { space: string; title: string; icon: string; color: string; weekdays: number[]; at_time: string | null; minutes: number | null; shared: boolean; gcal: boolean };
+
+export async function createHabit(h: HabitInput) {
+  const { supabase, user } = await requireUser();
+  const title = h.title.trim().slice(0, 80);
+  if (!title) return { error: 'Escribe qué quieres hacer.' };
+  const weekdays = [...new Set(h.weekdays.filter((d) => d >= 1 && d <= 7))].sort();
+  if (!weekdays.length) return { error: 'Elige al menos un día.' };
+  const at = h.at_time && /^\d{2}:\d{2}$/.test(h.at_time) ? h.at_time : null;
+  const minutes = h.minutes && h.minutes >= 5 && h.minutes <= 600 ? Math.round(h.minutes) : null;
+  const { count } = await supabase.from('habits').select('id', { count: 'exact', head: true }).eq('space_id', h.space).eq('user_id', user.id).is('archived_at', null);
+  const { data, error } = await supabase.from('habits').insert({
+    space_id: h.space, user_id: user.id, title, icon: h.icon || 'check', color: /^#[0-9a-f]{6}$/i.test(h.color) ? h.color : '#c77dff',
+    weekdays, at_time: at, minutes, shared: h.shared, position: count ?? 0,
+  }).select('id').single();
+  if (error) return { error: error.message };
+  // Google Calendar: evento semanal en los mismos días, si la persona lo conectó y el hábito tiene hora.
+  if (h.gcal && at) {
+    const { accessToken, createWeeklyEvent } = await import('./google');
+    const { data: rt } = await supabase.rpc('google_refresh_token');
+    const token = rt ? await accessToken(String(rt)) : null;
+    if (token) {
+      const [hh, mm] = at.split(':').map(Number);
+      const endMin = hh * 60 + mm + (minutes ?? 30);
+      const end = `${String(Math.floor(endMin / 60) % 24).padStart(2, '0')}:${String(endMin % 60).padStart(2, '0')}`;
+      const { todayISO } = await import('./format');
+      const id = await createWeeklyEvent(token, { title, weekdays, start: at, end, firstDate: todayISO() });
+      if (id) await supabase.from('habits').update({ gcal_event_id: id }).eq('id', data.id);
+    }
+  }
+  revalidatePath('/', 'layout');
+  return { success: true };
+}
+
+export async function archiveHabit(id: string) {
+  const { supabase, user } = await requireUser();
+  const { data: h } = await supabase.from('habits').select('gcal_event_id').eq('id', id).eq('user_id', user.id).single();
+  const { error } = await supabase.from('habits').update({ archived_at: new Date().toISOString() }).eq('id', id).eq('user_id', user.id);
+  if (error) return { error: error.message };
+  if (h?.gcal_event_id) {
+    const { accessToken, deleteEvent } = await import('./google');
+    const { data: rt } = await supabase.rpc('google_refresh_token');
+    const token = rt ? await accessToken(String(rt)) : null;
+    if (token) await deleteEvent(token, h.gcal_event_id);
+  }
+  revalidatePath('/', 'layout');
+  return { success: true };
+}
+
+export async function toggleHabit(habitId: string, day: string, done: boolean) {
+  const { supabase, user } = await requireUser();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return { error: 'Fecha no válida.' };
+  const { error } = done
+    ? await supabase.from('habit_checks').upsert({ habit_id: habitId, day, user_id: user.id }, { onConflict: 'habit_id,day', ignoreDuplicates: true })
+    : await supabase.from('habit_checks').delete().eq('habit_id', habitId).eq('day', day).eq('user_id', user.id);
+  if (error) return { error: error.message };
+  revalidatePath('/', 'layout');
+  return { success: true };
+}
+
+export async function toggleBlock(blockId: string, day: string, done: boolean) {
+  const { supabase, user } = await requireUser();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return { error: 'Fecha no válida.' };
+  const { error } = done
+    ? await supabase.from('block_checks').upsert({ block_id: blockId, day, user_id: user.id }, { onConflict: 'block_id,day', ignoreDuplicates: true })
+    : await supabase.from('block_checks').delete().eq('block_id', blockId).eq('day', day).eq('user_id', user.id);
+  if (error) return { error: error.message };
+  revalidatePath('/', 'layout');
+  return { success: true };
+}
+
+export async function sendNudge(to: string, habitId: string, message: string) {
+  const { supabase } = await requireUser();
+  const { error } = await supabase.rpc('send_nudge', { p_to: to, p_habit: habitId, p_message: message });
+  if (error) return { error: error.message };
   return { success: true };
 }

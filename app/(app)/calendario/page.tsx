@@ -4,6 +4,9 @@ import { DAYS, MES, addDays, hhmm, isoWeekday, todayISO } from '@/lib/format';
 import { accessToken, googleConfigured, listEvents, type GEvent } from '@/lib/google';
 import { addBlockWithGoogle, disconnectGoogle, removeBlock } from '@/lib/calendar-actions';
 import { ViewHead } from '@/components/bits';
+import { HabitToggle } from '@/components/habit-toggle';
+import { HabitWizard } from '@/components/habit-wizard';
+import { type Check, type Habit, isDue } from '@/lib/habits';
 
 export const metadata = { title: 'Calendario' };
 
@@ -13,16 +16,19 @@ const toH = (t: string) => { const [h, m] = t.split(':').map(Number); return h +
 
 export default async function Calendar({ searchParams }: { searchParams: Promise<{ semana?: string; ok?: string; error?: string }> }) {
   const sp = await searchParams;
-  const { supabase, spaces } = await getContext();
+  const { supabase, spaces, user } = await getContext();
   const today = todayISO();
   const base = sp.semana && /^\d{4}-\d{2}-\d{2}$/.test(sp.semana) ? sp.semana : today;
   const monday = addDays(base, 1 - isoWeekday(base));
   const week = Array.from({ length: 7 }, (_, i) => addDays(monday, i));
   const personal = spaces.find((s) => s.kind === 'personal');
 
-  const [{ data: blocks }, { data: status }] = await Promise.all([
+  const [{ data: blocks }, { data: status }, { data: myHabits }, { data: hchecks }, { data: bchecks }] = await Promise.all([
     supabase.from('schedule_blocks').select('*').order('start_time'),
     supabase.rpc('google_connection_status'),
+    supabase.from('habits').select('*').eq('user_id', user.id).is('archived_at', null).order('at_time'),
+    supabase.from('habit_checks').select('habit_id, day, user_id, done_at').gte('day', monday < today ? monday : today),
+    supabase.from('block_checks').select('block_id, day').gte('day', monday < today ? monday : today),
   ]);
   const conn = (status as { connected: boolean; google_email: string }[] | null)?.[0];
 
@@ -79,6 +85,43 @@ export default async function Calendar({ searchParams }: { searchParams: Promise
       {gError && <p className="err" role="alert">{gError}</p>}
       {sp.ok && <p className="ok-msg" role="status">{sp.ok}</p>}
 
+      {(() => {
+        // Hoy: cada bloque del horario y cada hábito se marca con un toque.
+        const wd = isoWeekday(today);
+        const live = (b: { weekdays: number[]; ends_on: string | null; starts_on: string | null }, d: string) => b.weekdays.includes(isoWeekday(d)) && (!b.ends_on || b.ends_on >= d) && (!b.starts_on || b.starts_on <= d);
+        // Todos tus hábitos (también los de espacios de hábitos). Si un bloque empieza a la misma hora que un hábito, se marca una sola vez.
+        const hs = ((myHabits ?? []) as Habit[]).filter((h) => isDue(h, today));
+        const todays = (blocks ?? []).filter((b) => live(b, today) && b.kind !== 'class' && !hs.some((h) => h.at_time && h.at_time.slice(0, 5) === String(b.start_time).slice(0, 5)));
+        const hc = (hchecks ?? []) as Check[];
+        const total = todays.length + hs.length;
+        const doneN = todays.filter((b) => (bchecks ?? []).some((c) => c.block_id === b.id && c.day === today)).length + hs.filter((h) => hc.some((c) => c.habit_id === h.id && c.day === today)).length;
+        // Semana: cumplido de lo que tocaba hasta hoy.
+        let wDue = 0, wGot = 0;
+        for (const d of week) {
+          if (d > today) break;
+          for (const b of (blocks ?? []).filter((x) => live(x, d) && x.kind !== 'class' && !((myHabits ?? []) as Habit[]).some((h) => isDue(h, d) && h.at_time && h.at_time.slice(0, 5) === String(x.start_time).slice(0, 5)))) { wDue++; if ((bchecks ?? []).some((c) => c.block_id === b.id && c.day === d)) wGot++; }
+          for (const h of ((myHabits ?? []) as Habit[]).filter((x) => isDue(x, d))) { wDue++; if (hc.some((c) => c.habit_id === h.id && c.day === d)) wGot++; }
+        }
+        const pct = total ? Math.round((doneN / total) * 100) : 0;
+        return (
+          <section className="panel today-track">
+            <div className="panel-head">
+              <h2>Hoy, {DAYS[wd - 1].toLowerCase()} {label(today)}</h2>
+              <div className="inline"><span className="label">{doneN} de {total} · semana {wDue ? Math.round((wGot / wDue) * 100) : 0}%</span>{personal && <HabitWizard space={personal.id} shared={false} google={!!conn} label="Nuevo hábito" taken={((myHabits ?? []) as Habit[]).map((h) => h.title)} />}</div>
+            </div>
+            <div className="hbp-bar big"><i style={{ width: `${pct}%` }} /></div>
+            {total ? (
+              <div className="ht-grid">
+                {[...todays.map((b) => ({ t: b.start_time as string, el: <HabitToggle key={'b' + b.id} block={b.id} day={today} done={(bchecks ?? []).some((c) => c.block_id === b.id && c.day === today)} title={b.title} sub={`${hhmm(b.start_time)} – ${hhmm(b.end_time)}`} color={b.kind === 'work' ? '#5fa8f5' : b.kind === 'routine' ? '#9a92a8' : b.kind === 'review' ? '#4cc38a' : '#c77dff'} icon={b.kind === 'work' ? 'briefcase' : b.kind === 'routine' ? 'dumbbell' : b.title.toLowerCase().includes('trading') ? 'chart' : b.title.toLowerCase().includes('ingl') ? 'globe' : 'book'} /> })),
+                  ...hs.map((h) => ({ t: h.at_time ?? '99', el: <HabitToggle key={'h' + h.id} habit={h.id} day={today} done={hc.some((c) => c.habit_id === h.id && c.day === today)} title={h.title} sub={h.at_time ? hhmm(h.at_time) : 'Hábito'} color={h.color} icon={h.icon} /> }))]
+                  .sort((a, b) => a.t.localeCompare(b.t)).map((x) => x.el)}
+              </div>
+            ) : <p className="muted">Hoy no tienes bloques ni hábitos.</p>}
+            <p className="note">Las clases no se marcan. Toca un bloque o hábito cuando lo cumplas.</p>
+          </section>
+        );
+      })()}
+
       <section className="panel">
         <div className="panel-head">
           <h2>Google Calendar</h2>
@@ -99,6 +142,7 @@ export default async function Calendar({ searchParams }: { searchParams: Promise
         <span><i style={{ background: 'rgba(157,78,221,.5)' }} />Estudio</span>
         <span><i style={{ background: 'rgba(76,195,138,.5)' }} />Revisión</span>
         <span><i style={{ background: '#221e2a' }} />Rutina</span>
+        <span><i style={{ background: 'rgba(95,168,245,.5)' }} />Trabajo</span>
         {conn && <span><i style={{ background: 'rgba(95,201,192,.5)' }} />Google Calendar</span>}
       </div>
 
@@ -145,7 +189,7 @@ export default async function Calendar({ searchParams }: { searchParams: Promise
               </fieldset>
               <div className="two"><label className="field">Desde<input type="time" name="start_time" required defaultValue="16:00" /></label><label className="field">Hasta<input type="time" name="end_time" required defaultValue="17:00" /></label></div>
               <div className="two">
-                <label className="field">Tipo<select name="kind"><option value="study">Estudio</option><option value="class">Clase</option><option value="routine">Rutina</option><option value="review">Revisión</option><option value="other">Otro</option></select></label>
+                <label className="field">Tipo<select name="kind"><option value="study">Estudio</option><option value="work">Trabajo</option><option value="class">Clase</option><option value="routine">Rutina</option><option value="review">Revisión</option><option value="other">Otro</option></select></label>
                 <label className="field">Etiqueta<input name="tag" placeholder="Ej.: UV, UAO, Estudio" /></label>
               </div>
               <label className="field">Termina el (opcional)<input type="date" name="ends_on" /></label>

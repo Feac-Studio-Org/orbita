@@ -3,7 +3,7 @@ import { requireUser } from './supabase/server';
 
 export type Modules = { messages: boolean; finance: boolean; assistant: boolean; calendar: boolean; bases: boolean };
 export type Space = {
-  id: string; name: string; kind: 'personal' | 'team'; description: string;
+  id: string; name: string; kind: 'personal' | 'team' | 'habits'; description: string;
   modules: { portfolio?: boolean; finance?: boolean; members?: boolean };
   role: 'owner' | 'partner' | 'member' | 'guest';
   projects: Project[];

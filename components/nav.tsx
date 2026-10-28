@@ -86,10 +86,18 @@ export function Sidebar({ name, initial, avatarUrl, spaces, modules, unread }: P
                 {modules.bases && item('/personal/bases', 'Mis bases de datos', { color: '#5fc9c0' })}
               </>
             )}
+            {s.kind === 'habits' && (
+              <>
+                {item(`/habitos/${s.id}`, 'Hoy', 'home')}
+                {item(`/habitos/${s.id}?zona=calendario`, 'Calendario', 'cal')}
+                {item(`/habitos/${s.id}?zona=habitos`, 'Hábitos', 'grid')}
+                {item(`/habitos/${s.id}?zona=constancia`, 'Constancia', 'chart')}
+              </>
+            )}
             {s.portfolio && item(`/portafolio/${s.id}`, 'Portafolio', 'chart')}
             {s.projects.map((p) => item(`/p/${p.key}`, p.name, { color: p.color, logo: p.logo }, <span className="key">{p.key}</span>))}
-            {s.kind === 'team' && s.members && item(`/miembros/${s.id}`, 'Miembros y roles', 'people')}
-            {s.isOwner && item(`/nuevo/proyecto?espacio=${s.id}`, 'Nuevo proyecto', 'plus', null, false)}
+            {s.kind !== 'personal' && s.members && item(`/miembros/${s.id}`, s.kind === 'habits' ? 'Miembros' : 'Miembros y roles', 'people')}
+            {s.isOwner && s.kind !== 'habits' && item(`/nuevo/proyecto?espacio=${s.id}`, 'Nuevo proyecto', 'plus', null, false)}
           </details>
         );
       })}
