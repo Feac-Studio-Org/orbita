@@ -10,20 +10,27 @@ import { HabitWizard } from '@/components/habit-wizard';
 import { NudgeButton } from '@/components/nudge-button';
 import { ArchiveHabit } from '@/components/archive-habit';
 import { Lines } from '@/components/charts';
+import { HabitCell } from '@/components/habit-cell';
+import { InviteBox } from '@/components/invite-box';
 
 export const metadata = { title: 'Hábitos' };
 
-const ZONES = [['hoy', 'Hoy'], ['calendario', 'Calendario'], ['habitos', 'Hábitos'], ['constancia', 'Constancia']] as const;
+// Hoy, Semana y Hábitos son solo tuyos; Track es el grupo completo.
+const ZONES = [['hoy', 'Hoy'], ['semana', 'Semana'], ['habitos', 'Mis hábitos'], ['track', 'Track']] as const;
+const TRACK = [['resumen', 'Resumen'], ['calendario', 'Calendario'], ['tabla', 'Hábitos del grupo'], ['constancia', 'Constancia']] as const;
 const PEOPLE_COLORS = ['#c77dff', '#4cc38a', '#5fa8f5', '#cfaf6e', '#ec6f86', '#5fc9c0', '#e0915a', '#7c6cf0'];
 const label = (iso: string) => { const [, m, d] = iso.split('-'); return `${+d} ${MES[+m - 1]}`; };
 
-export default async function HabitsSpace({ params, searchParams }: { params: Promise<{ space: string }>; searchParams: Promise<{ zona?: string; vista?: string; fecha?: string }> }) {
+export default async function HabitsSpace({ params, searchParams }: { params: Promise<{ space: string }>; searchParams: Promise<{ zona?: string; vista?: string; cal?: string; fecha?: string }> }) {
   const { space: id } = await params;
   const sp = await searchParams;
   const { supabase, user, spaces } = await getContext();
   const space = spaces.find((s) => s.id === id);
   if (!space) notFound();
-  const zone = ZONES.some(([z]) => z === sp.zona) ? sp.zona! : 'hoy';
+  // Compatibilidad con enlaces anteriores (?zona=calendario|constancia|habitos del grupo).
+  const legacy: Record<string, [string, string]> = { calendario: ['track', 'calendario'], constancia: ['track', 'constancia'] };
+  const zone = legacy[sp.zona ?? ''] ? legacy[sp.zona!][0] : ZONES.some(([z]) => z === sp.zona) ? sp.zona! : 'hoy';
+  const tview = legacy[sp.zona ?? ''] ? legacy[sp.zona!][1] : TRACK.some(([t]) => t === sp.vista) ? sp.vista! : 'resumen';
   const today = todayISO();
   const from = addDays(today, -7 * 12 - 6);
 
@@ -63,44 +70,24 @@ export default async function HabitsSpace({ params, searchParams }: { params: Pr
   if (zone === 'hoy') {
     const myToday = mine.filter((h) => isDue(h, today)).sort(byTime);
     const feed = checks.filter((c) => c.day === today).sort((a, b) => b.done_at.localeCompare(a.done_at)).slice(0, 12);
+    const me = people.find((p) => p.me);
+    const mDone = myToday.filter((h) => done(h, today)).length;
+    const mPct = myToday.length ? Math.round((mDone / myToday.length) * 100) : 0;
     body = (
-      <>
-        <section className="hb-people">
-          {people.map((p) => {
-            const due = habitsOf(p.id).filter((h) => isDue(h, today)).sort(byTime);
-            const d = due.filter((h) => done(h, today)).length;
-            const pct = due.length ? Math.round((d / due.length) * 100) : 0;
-            return (
-              <article key={p.id} className={'hb-person' + (p.me ? ' me' : '') + (due.length && d === due.length ? ' full' : '')} style={{ ['--pc' as string]: p.color }}>
-                <div className="hbp-top">
-                  <Avatar name={p.name} url={p.avatar} size={40} />
-                  <div className="hbp-name"><b>{p.me ? 'Tú' : p.name.split(' ')[0]}</b><span>{due.length ? `${d} de ${due.length} hoy` : 'Nada para hoy'}</span></div>
-                  <span className="hbp-pct num">{due.length ? `${pct}%` : '—'}</span>
-                </div>
-                <div className="hbp-bar"><i style={{ width: `${pct}%` }} /></div>
-                <div className="hbp-chips">
-                  {due.map((h) => {
-                    const ok = done(h, today);
-                    const chip = <span className={'hbp-chip' + (ok ? ' ok' : '')} style={{ ['--hc' as string]: h.color }} title={`${h.title}${h.at_time ? ' · ' + hhmm(h.at_time) : ''}${ok ? ' · hecho' : ''}`}><HabitIcon name={ok ? 'check' : h.icon} size={14} />{h.title}</span>;
-                    return !ok && !p.me && h.shared ? <span key={h.id} className="hbp-pending">{chip}<NudgeButton to={p.id} habit={h.id} name={p.name} what={h.title} /></span> : <span key={h.id}>{chip}</span>;
-                  })}
-                </div>
-                <span className="hbp-streak"><b className="num">{streak(habitsOf(p.id), checksOf(p.id), today)}</b> días seguidos</span>
-              </article>
-            );
-          })}
+      <div className="grid g-hb">
+        <section className="panel" style={{ ['--pc' as string]: me?.color }}>
+          <div className="panel-head"><h2>Tu día</h2><span className="label">{DAYS[isoWeekday(today) - 1]} {label(today)}</span></div>
+          <div className="my-day-head">
+            <b className="num">{mPct}%</b>
+            <div style={{ flex: 1 }}><div className="hbp-bar big"><i style={{ width: `${mPct}%` }} /></div><span className="note">{mDone} de {myToday.length} hábitos de hoy · racha de {streak(mine, checksOf(user.id), today)} días</span></div>
+          </div>
+          {myToday.length ? (
+            <div className="ht-grid">{myToday.map((h) => <HabitToggle key={h.id} habit={h.id} day={today} done={done(h, today)} title={h.title} sub={h.at_time ? `${hhmm(h.at_time)}${h.minutes ? ` · ${h.minutes} min` : ''}` : 'Cuando puedas'} color={h.color} icon={h.icon} />)}</div>
+          ) : <p className="muted">{mine.length ? 'Hoy no tienes hábitos programados. Descansa.' : 'Todavía no tienes hábitos aquí. Agrega el primero: puedes unirte a los del grupo con un toque.'}</p>}
+          <div>{wizard}</div>
         </section>
-
-        <div className="grid g-hb">
           <section className="panel">
-            <div className="panel-head"><h2>Tus hábitos de hoy</h2><span className="label">{DAYS[isoWeekday(today) - 1]} {label(today)}</span></div>
-            {myToday.length ? (
-              <div className="ht-grid">{myToday.map((h) => <HabitToggle key={h.id} habit={h.id} day={today} done={done(h, today)} title={h.title} sub={h.at_time ? `${hhmm(h.at_time)}${h.minutes ? ` · ${h.minutes} min` : ''}` : 'Cuando puedas'} color={h.color} icon={h.icon} />)}</div>
-            ) : <p className="muted">{mine.length ? 'Hoy no tienes hábitos programados. Descansa.' : 'Todavía no tienes hábitos aquí. Agrega el primero: puedes unirte a los del grupo con un toque.'}</p>}
-            <div>{wizard}</div>
-          </section>
-          <section className="panel">
-            <div className="panel-head"><h2>En el grupo</h2><span className="label">Hoy</span></div>
+            <div className="panel-head"><h2>Lo que va haciendo el grupo</h2><span className="label">Hoy</span></div>
             {feed.length ? (
               <ol className="feed">
                 {feed.map((c) => {
@@ -117,14 +104,13 @@ export default async function HabitsSpace({ params, searchParams }: { params: Pr
               </ol>
             ) : <p className="muted">Nadie ha marcado nada todavía hoy. Sé el primero.</p>}
           </section>
-        </div>
-      </>
+      </div>
     );
-  } else if (zone === 'calendario') {
-    const view = ['dia', 'semana', 'mes'].includes(sp.vista ?? '') ? sp.vista! : 'semana';
+  } else if (zone === 'track' && tview === 'calendario') {
+    const view = ['dia', 'semana', 'mes'].includes(sp.cal ?? '') ? sp.cal! : 'semana';
     const base = sp.fecha && /^\d{4}-\d{2}-\d{2}$/.test(sp.fecha) ? sp.fecha : today;
     const step = view === 'dia' ? 1 : view === 'semana' ? 7 : 30;
-    const link = (v: string, f: string) => `/habitos/${id}?zona=calendario&vista=${v}&fecha=${f}`;
+    const link = (v: string, f: string) => `/habitos/${id}?zona=track&vista=calendario&cal=${v}&fecha=${f}`;
     let grid: React.ReactNode;
     if (view === 'dia') {
       const items = habits.filter((h) => isDue(h, base)).sort(byTime);
@@ -206,7 +192,7 @@ export default async function HabitsSpace({ params, searchParams }: { params: Pr
         <div className="legend">{people.map((p) => <span key={p.id}><i style={{ background: p.color }} />{p.me ? 'Tú' : p.name}</span>)}</div>
       </section>
     );
-  } else if (zone === 'habitos') {
+  } else if (zone === 'track' && tview === 'tabla') {
     const monday = addDays(today, 1 - isoWeekday(today));
     const week = Array.from({ length: 7 }, (_, i) => addDays(monday, i));
     const rows = [...groups.entries()].sort((a, b) => b[1].people.size - a[1].people.size);
@@ -239,7 +225,7 @@ export default async function HabitsSpace({ params, searchParams }: { params: Pr
         <p className="note">Cada punto es un día de esta semana: lleno si se cumplió, con borde si tocaba. Tus hábitos: {mine.map((h) => `${h.title} (${freqLabel(h.weekdays).toLowerCase()})`).join(', ') || 'ninguno todavía'}.</p>
       </section>
     );
-  } else {
+  } else if (zone === 'track' && tview === 'constancia') {
     // Constancia: % semanal de cada persona en las últimas 8 semanas, rachas y mapa de 12 semanas.
     const monday = addDays(today, 1 - isoWeekday(today));
     const weeks = Array.from({ length: 8 }, (_, i) => addDays(monday, -7 * (7 - i)));
@@ -283,6 +269,93 @@ export default async function HabitsSpace({ params, searchParams }: { params: Pr
     );
   }
 
+  if (zone === 'semana') {
+    const monday = addDays(today, 1 - isoWeekday(today));
+    const week = Array.from({ length: 7 }, (_, i) => addDays(monday, i));
+    const mineSorted = [...mine].sort(byTime);
+    body = (
+      <section className="panel">
+        <div className="panel-head"><h2>Tu semana</h2><span className="label">Toca un día para marcarlo</span></div>
+        {mineSorted.length ? (
+          <div className="my-week">
+            <div className="mw-row head"><span />{week.map((d, i) => <span key={d} className={d === today ? 'today' : ''}><b>{WD[i]}</b><small>{+d.slice(8)}</small></span>)}<span>Semana</span></div>
+            {mineSorted.map((h) => {
+              const target = week.filter((d) => isDue(h, d)).length;
+              const got = week.filter((d) => done(h, d)).length;
+              return (
+                <div key={h.id} className="mw-row">
+                  <span className="mw-habit" style={{ ['--hc' as string]: h.color }}><span className="hw-badge"><HabitIcon name={h.icon} size={15} /></span><span><b>{h.title}</b><small>{h.at_time ? hhmm(h.at_time) : 'sin hora'}</small></span></span>
+                  {week.map((d) => <HabitCell key={d} habit={h.id} day={d} done={done(h, d)} due={isDue(h, d)} future={d > today} color={h.color} label={`${h.title} · ${label(d)}`} />)}
+                  <span className="mw-total num">{got}/{target}</span>
+                </div>
+              );
+            })}
+            <div className="mw-row foot"><span className="label">Tu día</span>{week.map((d) => { const pct = dayPct(mine, checksOf(user.id), d); return <span key={d} className="num">{pct === null || d > today ? '—' : `${pct}%`}</span>; })}<span /></div>
+          </div>
+        ) : <p className="muted">Agrega tus hábitos para ver tu semana.</p>}
+      </section>
+    );
+  } else if (zone === 'habitos') {
+    body = (
+      <section className="panel">
+        <div className="panel-head"><h2>Mis hábitos</h2>{wizard}</div>
+        {mine.length ? (
+          <div className="my-habits">
+            {[...mine].sort(byTime).map((h) => (
+              <div key={h.id} className="mh-card" style={{ ['--hc' as string]: h.color }}>
+                <span className="hw-badge"><HabitIcon name={h.icon} size={18} /></span>
+                <div className="mh-txt"><b>{h.title}</b><span>{freqLabel(h.weekdays)}{h.at_time ? ` · ${hhmm(h.at_time)}` : ''}{h.minutes ? ` · ${h.minutes} min` : ''}</span><span className="note">{groups.get(h.group_key)!.people.size > 1 ? `Lo hacen ${groups.get(h.group_key)!.people.size} personas del grupo` : 'Solo tú en el grupo'}</span></div>
+                <ArchiveHabit id={h.id} title={h.title} />
+              </div>
+            ))}
+          </div>
+        ) : <p className="muted">Todavía no tienes hábitos aquí.</p>}
+        <p className="note">Lo que agregas aquí lo ve el grupo en Track, y les llega un aviso cuando lo cumples.</p>
+      </section>
+    );
+  } else if (zone === 'track' && tview === 'resumen') {
+    body = (
+      <>
+        <section className="hb-people">
+          {people.map((p) => {
+            const due = habitsOf(p.id).filter((h) => isDue(h, today)).sort(byTime);
+            const d = due.filter((h) => done(h, today)).length;
+            const pct = due.length ? Math.round((d / due.length) * 100) : 0;
+            return (
+              <article key={p.id} className={'hb-person' + (p.me ? ' me' : '') + (due.length && d === due.length ? ' full' : '')} style={{ ['--pc' as string]: p.color }}>
+                <div className="hbp-top">
+                  <Avatar name={p.name} url={p.avatar} size={40} />
+                  <div className="hbp-name"><b>{p.me ? 'Tú' : p.name.split(' ')[0]}</b><span>{due.length ? `${d} de ${due.length} hoy` : 'Nada para hoy'}</span></div>
+                  <span className="hbp-pct num">{due.length ? `${pct}%` : '—'}</span>
+                </div>
+                <div className="hbp-bar"><i style={{ width: `${pct}%` }} /></div>
+                <div className="hbp-chips">
+                  {due.map((h) => {
+                    const ok = done(h, today);
+                    const chip = <span className={'hbp-chip' + (ok ? ' ok' : '')} style={{ ['--hc' as string]: h.color }} title={`${h.title}${h.at_time ? ' · ' + hhmm(h.at_time) : ''}${ok ? ' · hecho' : ''}`}><HabitIcon name={ok ? 'check' : h.icon} size={14} />{h.title}</span>;
+                    return !ok && !p.me && h.shared ? <span key={h.id} className="hbp-pending">{chip}<NudgeButton to={p.id} habit={h.id} name={p.name} what={h.title} /></span> : <span key={h.id}>{chip}</span>;
+                  })}
+                </div>
+                <span className="hbp-streak"><b className="num">{streak(habitsOf(p.id), checksOf(p.id), today)}</b> días seguidos</span>
+              </article>
+            );
+          })}
+        </section>
+
+        <div className="grid g-hb">
+          <section className="panel">
+            <div className="panel-head"><h2>Miembros</h2><span className="label">{people.length}</span></div>
+            <div className="people">{people.map((p) => <div key={p.id} className="person"><Avatar name={p.name} url={p.avatar} size={30} /><div><b>{p.me ? 'Tú' : p.name}</b><span>{habitsOf(p.id).length} hábitos</span></div><span className="num muted">{streak(habitsOf(p.id), checksOf(p.id), today)} d</span></div>)}</div>
+          </section>
+          <section className="panel">
+            <div className="panel-head"><h2>Invitar al grupo</h2></div>
+            {['owner', 'partner'].includes(space.role) ? <InviteBox space={id} name={space.name} /> : <p className="muted">Pídele a quien creó el grupo que te dé un código para invitar a alguien.</p>}
+          </section>
+        </div>
+      </>
+    );
+  }
+
   return (
     <>
       <div className="hb-head">
@@ -292,10 +365,11 @@ export default async function HabitsSpace({ params, searchParams }: { params: Pr
         </div>
         <div className="inline">
           <div className="avatars">{people.slice(0, 6).map((p) => <Avatar key={p.id} name={p.name} url={p.avatar} size={30} />)}</div>
-          {['owner', 'partner'].includes(space.role) && <Link className="pill" href={`/miembros/${id}`}>Invitar</Link>}
+          <Link className="pill" href={`/habitos/${id}?zona=track&vista=resumen`}>Invitar</Link>
         </div>
       </div>
       <nav className="tabs">{ZONES.map(([z, l]) => <Link key={z} className="tab" href={`/habitos/${id}?zona=${z}`} aria-current={z === zone ? 'page' : undefined}>{l}</Link>)}</nav>
+      {zone === 'track' && <nav className="seg" aria-label="Track">{TRACK.map(([t, l]) => <Link key={t} href={`/habitos/${id}?zona=track&vista=${t}`} aria-current={t === tview ? 'page' : undefined}>{l}</Link>)}</nav>}
       {body}
     </>
   );

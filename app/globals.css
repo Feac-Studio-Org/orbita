@@ -753,3 +753,39 @@ details.add[open] > summary { margin-bottom: 12px; }
   .hb-heat-row { grid-template-columns: minmax(0, 1fr); }
 }
 .ev.event { background: color-mix(in srgb, var(--evc, var(--violet-hi)) 22%, transparent); border-color: var(--evc, var(--violet-hi)); }
+
+/* ---------- Hábitos: vistas personales e invitación ---------- */
+.my-day-head { display: flex; align-items: center; gap: 16px; }
+.my-day-head > b { font-size: 34px; font-weight: 600; color: var(--pc, var(--violet-hi)); letter-spacing: -.02em; }
+.my-day-head .note { display: block; margin-top: 6px; }
+.my-week { display: grid; gap: 4px; }
+.mw-row { display: grid; grid-template-columns: minmax(150px, 1.6fr) repeat(7, minmax(0, 1fr)) 64px; gap: 6px; align-items: center; padding: 6px 0; border-top: 1px solid var(--line); }
+.mw-row.head { border-top: 0; font-size: 12px; color: var(--mute); }
+.mw-row.head span { display: grid; justify-items: center; }
+.mw-row.head span.today b { color: var(--violet-hi); }
+.mw-row.head small { font-size: 10.5px; color: var(--faint); }
+.mw-row.foot { font-size: 12px; color: var(--mute); }
+.mw-row.foot span { text-align: center; }
+.mw-habit { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.mw-habit b { display: block; font-size: 13.5px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mw-habit small { font-size: 11.5px; color: var(--mute); }
+.mw-total { text-align: center; font-size: 12.5px; color: var(--mute); }
+.hc { justify-self: center; width: 34px; height: 34px; border-radius: 10px; border: 2px solid var(--hc); background: transparent; display: grid; place-items: center; color: var(--ink); transition: background .15s, transform .1s; }
+.hc:hover:not(:disabled) { background: color-mix(in srgb, var(--hc) 18%, transparent); }
+.hc:active:not(:disabled) { transform: scale(.92); }
+.hc.on { background: var(--hc); }
+.hc.future { opacity: .35; cursor: default; }
+.hc.off { border: 0; width: 8px; height: 8px; border-radius: 50%; background: var(--ink-4); }
+.my-habits { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; }
+.mh-card { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 14px; border-radius: 14px; background: var(--ink-3); border: 1px solid var(--line); border-left: 3px solid var(--hc); }
+.mh-txt { display: grid; gap: 2px; }
+.mh-txt b { font-weight: 600; }
+.mh-txt span { font-size: 12.5px; color: var(--mute); }
+.invite-box { display: grid; gap: 10px; justify-items: start; }
+.invite-code { font: 600 30px var(--f-mono); letter-spacing: .14em; color: var(--violet-hi); padding: 6px 14px; border-radius: 12px; background: var(--violet-wash); }
+.seg + .hb-people, .tabs + .seg { margin-top: -6px; }
+@media (max-width: 760px) {
+  .mw-row { grid-template-columns: minmax(96px, 1fr) repeat(7, minmax(0, 1fr)) 36px; gap: 3px; }
+  .hc { width: 28px; height: 28px; border-radius: 8px; }
+  .mw-habit .hw-badge { display: none; }
+}

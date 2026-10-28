@@ -598,3 +598,11 @@ export async function deleteEvent(f: FormData) {
   revalidatePath('/calendario');
   back('/calendario', 'Evento eliminado.', 'ok');
 }
+
+/** Código para invitar a un espacio de hábitos (sin proyectos de por medio). */
+export async function createHabitInvite(space: string) {
+  const { supabase, user } = await requireUser();
+  const { data, error } = await supabase.from('space_invites').insert({ space_id: space, role: 'member', project_ids: [], created_by: user.id }).select('code').single();
+  if (error) return { error: error.message };
+  return { code: data.code as string };
+}
