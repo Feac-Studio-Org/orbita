@@ -1,9 +1,10 @@
 import Link from 'next/link';
+import { cookies } from 'next/headers';
 import { getContext } from '@/lib/data';
 import { addDays, fmtDate, isoWeekday, todayISO } from '@/lib/format';
 import { createList, createTask, deleteList, deleteTask, updateList, updateTask } from '@/lib/task-actions';
 import { LIST_COLORS, TASK_REPEAT, dueLabel, remindText, type Task, type TaskList } from '@/lib/tasks';
-import { StepCheck, TaskCheck, TaskForm } from '@/components/task-bits';
+import { QuickTask, StepCheck, TaskCheck, TaskForm, TaskSummary } from '@/components/task-bits';
 import { DeleteButton } from '@/components/delete-button';
 import { ViewHead } from '@/components/bits';
 
@@ -26,8 +27,9 @@ export default async function Tasks({ searchParams }: { searchParams: Promise<{ 
   const tasks = (open ?? []) as Task[];
   const done = (doneRows ?? []) as Task[];
   const selected = sp.t ? [...tasks, ...done].find((t) => t.id === sp.t) : undefined;
-  const view = VIEWS.some(([v]) => v === sp.vista) ? sp.vista! : selected?.list_id ? 'lista' : 'hoy';
   const list = lists.find((l) => l.id === sp.lista);
+  const view = list ? 'lista' : VIEWS.some(([v]) => v === sp.vista) ? sp.vista! : 'hoy';
+  const mode = (await cookies()).get('tk_resumen')?.value;
   const from = `/tareas?vista=${view}${list ? `&lista=${list.id}` : ''}`;
   const listOf = (id: string | null) => lists.find((l) => l.id === id);
 
@@ -68,14 +70,14 @@ export default async function Tasks({ searchParams }: { searchParams: Promise<{ 
 
   let body: React.ReactNode;
   if (view === 'hoy') {
-    body = late.length + dueToday.length + noDate.length ? (
+    body = late.length + dueToday.length + noDate.length + soon.length ? (
       <>
         <Group title="Vencidas" items={late} hint="Te sigo avisando cada día hasta que las marques" />
         <Group title="Para hoy" items={dueToday} />
         <Group title="Pronto" items={soon} hint="Próximos 3 días" />
         <Group title="Sin plazo" items={noDate} />
       </>
-    ) : <p className="muted tk-empty">Nada para hoy. {soon.length ? `Tienes ${soon.length} para los próximos días.` : ''}</p>;
+    ) : <p className="muted tk-empty">{tasks.length ? 'Nada para hoy ni para los próximos días.' : 'No tienes tareas pendientes. Escribe arriba la primera.'}</p>;
   } else if (view === 'proximas') {
     const byDay = new Map<string, Task[]>();
     for (const t of week) byDay.set(t.due_date!, [...(byDay.get(t.due_date!) ?? []), t]);
@@ -88,95 +90,119 @@ export default async function Tasks({ searchParams }: { searchParams: Promise<{ 
       </>
     ) : <p className="muted tk-empty">No tienes tareas con plazo. Ponle fecha a una y Órbita te recuerda antes.</p>;
   } else if (view === 'hechas') {
-    body = done.length ? <Group title="Hechas" items={done} hint="Las últimas 60" /> : <p className="muted tk-empty">Todavía no has terminado ninguna.</p>;
+    body = done.length ? <Group title="Últimas terminadas" items={done} hint="Hasta 60" /> : <p className="muted tk-empty">Todavía no has terminado ninguna.</p>;
+  } else if (list) {
+    const items = tasks.filter((t) => t.list_id === list.id);
+    body = items.length ? <div className="tk-rows">{items.map((t) => <Row key={t.id} t={t} />)}</div> : <p className="muted tk-empty">Esta lista está vacía. Escribe arriba para agregar la primera tarea.</p>;
   } else {
-    const shown = list ? [list] : lists;
-    body = (
+    body = lists.length ? (
       <>
-        {list && (
-          <details className="tk-listedit">
-            <summary className="link">Cambiar nombre o color</summary>
-            <form className="inline" action={updateList}>
-              <input type="hidden" name="id" value={list.id} />
-              <input className="inp" name="name" defaultValue={list.name} maxLength={60} aria-label="Nombre de la lista" />
-              <select className="inp sm" name="color" defaultValue={list.color} aria-label="Color">{LIST_COLORS.map((c, i) => <option key={c} value={c}>Color {i + 1}</option>)}</select>
-              <button className="pill mini" type="submit">Guardar</button>
-            </form>
-          </details>
-        )}
-        {shown.map((l) => <Group key={l.id} title={l.name} items={tasks.filter((t) => t.list_id === l.id)} />)}
-        {!list && <Group title="Sin lista" items={tasks.filter((t) => !t.list_id)} />}
-        {list && !tasks.some((t) => t.list_id === list.id) && <p className="muted tk-empty">Esta lista está vacía.</p>}
-        {!list && !lists.length && <p className="muted tk-empty">Crea listas para separar lo de la universidad, la casa, trámites o lo que quieras.</p>}
+        {lists.map((l) => <Group key={l.id} title={l.name} items={tasks.filter((t) => t.list_id === l.id)} />)}
+        <Group title="Sin lista" items={tasks.filter((t) => !t.list_id)} />
+        {!tasks.length && <p className="muted tk-empty">Tus listas están vacías.</p>}
       </>
+    ) : (
+      <div className="tk-nolists">
+        <b>Todavía no tienes listas</b>
+        <p className="muted">Las listas sirven para separar lo de la universidad, la casa, los trámites o lo que quieras. Son opcionales: puedes usar Tareas sin ellas.</p>
+        <form className="inline" action={createList}>
+          <input type="hidden" name="from" value={from} />
+          <input className="inp" name="name" placeholder="Nombre de la lista, por ejemplo Universidad" maxLength={60} required aria-label="Nombre de la nueva lista" />
+          <button className="pill solid mini" type="submit">Crear lista</button>
+        </form>
+      </div>
     );
   }
 
   const flash = sp.ok ? <p className="ok-msg" role="status">{sp.ok}</p> : sp.error ? <p className="err" role="alert">{sp.error}</p> : null;
   const close = from;
+  const counts: Record<string, number> = { hoy: late.length + dueToday.length, proximas: week.length + later.length, lista: tasks.length, hechas: 0 };
+  const titles: Record<string, string> = { hoy: 'Hoy', proximas: 'Próximas', lista: 'Todas las listas', hechas: 'Hechas' };
 
   return (
     <>
       <ViewHead label="Tus pendientes · solo tú los ves" title="Tareas" text="Lo que tienes que hacer, con su plazo. Órbita te avisa antes de que se venza.">
         <Link className="pill solid" href={`${from}&nueva=1`}><span className="pill__dot" />Nueva tarea</Link>
       </ViewHead>
-      {flash}
-      <div className="stat-row">
-        <div className="stat"><span className="label">Vencidas</span><b className="num" style={{ color: late.length ? 'var(--bad)' : undefined }}>{late.length}</b><span>{late.length ? 'hazlas primero' : 'nada vencido'}</span></div>
-        <div className="stat"><span className="label">Hoy</span><b className="num">{dueToday.length}</b><span>con plazo hoy</span></div>
-        <div className="stat"><span className="label">Esta semana</span><b className="num">{week.length}</b><span>hasta el domingo</span></div>
-        <div className="stat"><span className="label">Hechas</span><b className="num">{done.filter((t) => t.done_at!.slice(0, 10) >= addDays(today, -7)).length}</b><span>en los últimos 7 días</span></div>
-      </div>
-      <div className="tk-layout">
-        <aside className="tk-side" aria-label="Listas">
-          <nav className="tk-nav">
-            {VIEWS.map(([v, l]) => (
-              <Link key={v} href={`/tareas?vista=${v}`} aria-current={view === v && !list ? 'page' : undefined}>
-                {l}<span className="num">{v === 'hoy' ? late.length + dueToday.length || '' : v === 'proximas' ? week.length + later.length || '' : v === 'lista' ? tasks.length || '' : ''}</span>
-              </Link>
-            ))}
-          </nav>
-          <span className="label" style={{ padding: '0 10px' }}>Mis listas</span>
-          <nav className="tk-nav">
-            {lists.map((l) => (
-              <Link key={l.id} href={`/tareas?vista=lista&lista=${l.id}`} aria-current={list?.id === l.id ? 'page' : undefined}>
-                <i className="dot" style={{ background: l.color }} />{l.name}<span className="num">{tasks.filter((t) => t.list_id === l.id).length || ''}</span>
-              </Link>
-            ))}
-          </nav>
-          <form className="tk-newlist" action={createList}>
-            <input type="hidden" name="from" value={from} />
-            <input className="inp" name="name" placeholder="Nueva lista" maxLength={60} aria-label="Nombre de la nueva lista" />
-            <button className="pill mini" type="submit">Crear</button>
-          </form>
-        </aside>
+      <TaskSummary mode={mode === 'cards' || mode === 'hidden' ? mode : 'compact'} items={[
+        { label: 'Vencidas', value: late.length, hint: late.length ? 'hazlas primero' : 'nada vencido', href: '/tareas?vista=hoy', bad: true },
+        { label: 'Hoy', value: dueToday.length, hint: 'con plazo hoy', href: '/tareas?vista=hoy' },
+        { label: 'Esta semana', value: week.length, hint: 'hasta el domingo', href: '/tareas?vista=proximas' },
+        { label: 'Hechas en 7 días', value: done.filter((t) => t.done_at!.slice(0, 10) >= addDays(today, -7)).length, hint: 'en los últimos 7 días', href: '/tareas?vista=hechas' },
+      ]} />
 
-        <div className="tk-body">
-          {(sp.nueva || (!tasks.length && !done.length)) && !selected && (
-            <section className="panel">
-              <div className="panel-head"><h2>Nueva tarea</h2>{sp.nueva && <Link className="link" href={close}>Cerrar</Link>}</div>
-              <TaskForm action={createTask} lists={lists} goals={goals} from={from} defaultList={list?.id} />
-            </section>
-          )}
-          {selected && (
-            <section className="panel tk-detail">
-              <div className="panel-head">
-                <div className="inline"><TaskCheck id={selected.id} done={!!selected.done_at} color={listOf(selected.list_id)?.color} /><h2>{selected.title}</h2></div>
-                <div className="inline"><DeleteButton action={deleteTask} fields={{ id: selected.id, from }} what={`la tarea «${selected.title}»`} /><Link className="link" href={close}>Cerrar</Link></div>
-              </div>
-              {selected.due_date && !selected.done_at && <p className="note">{remindText(selected.remind_days)} a las {selected.remind_time.slice(0, 5)}{selected.remind_overdue ? ', y cada día si se vence.' : '.'}</p>}
-              {selected.steps.length > 0 && (
-                <div className="tk-steps">{selected.steps.map((x, i) => <StepCheck key={i} id={selected.id} index={i} done={x.done} text={x.t} />)}</div>
-              )}
-              <TaskForm action={updateTask} lists={lists} goals={goals} task={selected} from={from} submit="Guardar cambios" />
-            </section>
-          )}
-          <div className="panel tk-panel">
-            {list && <div className="panel-head"><h2><i className="dot" style={{ background: list.color, marginRight: 8 }} />{list.name}</h2><DeleteButton action={deleteList} fields={{ id: list.id }} what={`la lista «${list.name}»`} detail="Sus tareas no se borran: quedan en «Sin lista»." /></div>}
-            {body}
-          </div>
+      <nav className="tabs tk-tabs" aria-label="Vistas de tareas">
+        {VIEWS.map(([v, l]) => (
+          <Link key={v} className="tab" href={`/tareas?vista=${v}`} aria-current={view === v ? 'page' : undefined}>
+            {v === 'lista' ? 'Listas' : l}{counts[v] > 0 && <span className="tab-n">{counts[v]}</span>}
+          </Link>
+        ))}
+      </nav>
+
+      {view === 'lista' && lists.length > 0 && (
+        <div className="tk-lists">
+          <Link className="chip" href="/tareas?vista=lista" aria-current={!list ? 'page' : undefined}>Todas</Link>
+          {lists.map((l) => (
+            <Link key={l.id} className="chip" href={`/tareas?vista=lista&lista=${l.id}`} aria-current={list?.id === l.id ? 'page' : undefined}>
+              <i className="dot" style={{ background: l.color }} />{l.name}<span className="num">{tasks.filter((t) => t.list_id === l.id).length || ''}</span>
+            </Link>
+          ))}
+          <details className="tk-addlist">
+            <summary className="chip">+ Nueva lista</summary>
+            <form className="inline" action={createList}>
+              <input type="hidden" name="from" value={from} />
+              <input className="inp" name="name" placeholder="Nombre de la lista" maxLength={60} required autoFocus aria-label="Nombre de la nueva lista" />
+              <button className="pill solid mini" type="submit">Crear</button>
+            </form>
+          </details>
         </div>
-      </div>
+      )}
+
+      {flash}
+
+      {sp.nueva && !selected && (
+        <section className="panel">
+          <div className="panel-head"><h2>Nueva tarea</h2><Link className="link" href={close}>Cerrar</Link></div>
+          <TaskForm action={createTask} lists={lists} goals={goals} from={from} defaultList={list?.id} />
+        </section>
+      )}
+      {selected && (
+        <section className="panel tk-detail">
+          <div className="panel-head">
+            <div className="inline"><TaskCheck id={selected.id} done={!!selected.done_at} color={listOf(selected.list_id)?.color} /><h2>{selected.title}</h2></div>
+            <div className="inline"><DeleteButton action={deleteTask} fields={{ id: selected.id, from }} what={`la tarea «${selected.title}»`} /><Link className="link" href={close}>Cerrar</Link></div>
+          </div>
+          {selected.due_date && !selected.done_at && <p className="note">{remindText(selected.remind_days)} a las {selected.remind_time.slice(0, 5)}{selected.remind_overdue ? ', y cada día si se vence.' : '.'}</p>}
+          {selected.steps.length > 0 && (
+            <div className="tk-steps">{selected.steps.map((x, i) => <StepCheck key={i} id={selected.id} index={i} done={x.done} text={x.t} />)}</div>
+          )}
+          <TaskForm action={updateTask} lists={lists} goals={goals} task={selected} from={from} submit="Guardar cambios" />
+        </section>
+      )}
+
+      <section className="panel tk-panel">
+        <div className="panel-head">
+          {list ? (
+            <h2 className="tk-ptitle"><i className="dot" style={{ background: list.color }} />{list.name}<span className="num muted">{tasks.filter((t) => t.list_id === list.id).length}</span></h2>
+          ) : <h2 className="tk-ptitle">{titles[view]}</h2>}
+          {list && (
+            <div className="inline">
+              <details className="tk-listedit">
+                <summary className="del-btn with-label">Editar</summary>
+                <form className="inline tk-listedit-form" action={updateList}>
+                  <input type="hidden" name="id" value={list.id} />
+                  <input className="inp" name="name" defaultValue={list.name} maxLength={60} aria-label="Nombre de la lista" />
+                  <select className="inp sm" name="color" defaultValue={list.color} aria-label="Color">{LIST_COLORS.map((c, i) => <option key={c} value={c}>Color {i + 1}</option>)}</select>
+                  <button className="pill mini" type="submit">Guardar</button>
+                </form>
+              </details>
+              <DeleteButton action={deleteList} fields={{ id: list.id }} what={`la lista «${list.name}»`} detail="Sus tareas no se borran: quedan en «Sin lista»." />
+            </div>
+          )}
+        </div>
+        {view !== 'hechas' && (view !== 'lista' || list || lists.length > 0) && <QuickTask key={list?.id ?? view} list={list?.id ?? null} placeholder={list ? `Agregar a ${list.name}…` : 'Agregar una tarea…'} />}
+        {body}
+      </section>
     </>
   );
 }

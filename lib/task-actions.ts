@@ -81,12 +81,12 @@ export async function setStepDone(id: string, index: number, done: boolean) {
   return { success: true };
 }
 
-/** Crear rápido desde Inicio: solo nombre y plazo. */
-export async function quickTask(title: string, due: string | null) {
+/** Crear rápido: solo nombre, plazo y, si estás dentro de una lista, esa lista. */
+export async function quickTask(title: string, due: string | null, list: string | null = null) {
   const { supabase } = await requireUser();
   const t = title.trim().slice(0, 200);
   if (!t) return { error: 'Escribe qué hay que hacer.' };
-  const { error } = await supabase.from('tasks').insert({ title: t, due_date: due && /^\d{4}-\d{2}-\d{2}$/.test(due) ? due : null });
+  const { error } = await supabase.from('tasks').insert({ title: t, due_date: due && /^\d{4}-\d{2}-\d{2}$/.test(due) ? due : null, list_id: list });
   if (error) return { error: error.message };
   revalidatePath('/', 'layout');
   return { success: true };

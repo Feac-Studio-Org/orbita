@@ -116,8 +116,8 @@ export function TaskForm({ action, lists, goals = [], task, from, defaultList, s
   );
 }
 
-/** Agregar rápido desde Inicio: nombre y, si quieres, en cuántos días. */
-export function QuickTask() {
+/** Agregar rápido: nombre y, si quieres, en cuántos días. Dentro de una lista, la tarea queda en esa lista. */
+export function QuickTask({ list = null, placeholder = 'Agregar una tarea…' }: { list?: string | null; placeholder?: string }) {
   const router = useRouter();
   const [title, setTitle] = useState('');
   const [days, setDays] = useState<number | null>(null);
@@ -127,12 +127,12 @@ export function QuickTask() {
     <form className="tk-qadd" onSubmit={(e) => {
       e.preventDefault();
       start(async () => {
-        const r = await quickTask(title, days === null ? null : iso(days));
+        const r = await quickTask(title, days === null ? null : iso(days), list);
         if ('error' in r && r.error) { setErr(r.error); return; }
         setTitle(''); setDays(null); setErr(''); router.refresh();
       });
     }}>
-      <input className="inp" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Agregar una tarea…" aria-label="Nueva tarea" />
+      <input className="inp" value={title} onChange={(e) => setTitle(e.target.value)} placeholder={placeholder} aria-label="Nueva tarea" />
       <div className="tk-quick">
         {QUICK.slice(0, 5).map(([l, n]) => <button type="button" key={l} className={'chip' + (days === n ? ' on' : '')} onClick={() => setDays(days === n ? null : n)}>{l}</button>)}
         <button className="pill solid mini" type="submit" disabled={pending || !title.trim()}>Agregar</button>
@@ -142,3 +142,41 @@ export function QuickTask() {
   );
 }
 
+
+type SummaryMode = 'cards' | 'compact' | 'hidden';
+/** Resumen de Tareas: en tarjetas, en una línea o escondido. Se recuerda en este navegador. */
+export function TaskSummary({ mode: initial, items }: { mode: SummaryMode; items: { label: string; value: number; hint: string; href: string; bad?: boolean }[] }) {
+  const [mode, setMode] = useState<SummaryMode>(initial);
+  const set = (m: SummaryMode) => { setMode(m); document.cookie = `tk_resumen=${m}; path=/; max-age=31536000; samesite=lax`; };
+  if (mode === 'hidden') return (
+    <button type="button" className="tk-sum-show" onClick={() => set('compact')}>
+      <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true"><path d="m4 6 4 4 4-4" /></svg>Mostrar resumen
+    </button>
+  );
+  const tools = (
+    <div className="tk-sum-tools">
+      <button type="button" onClick={() => set(mode === 'cards' ? 'compact' : 'cards')} aria-label={mode === 'cards' ? 'Hacer el resumen más pequeño' : 'Hacer el resumen más grande'} title={mode === 'cards' ? 'Más pequeño' : 'Más grande'}>
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true" style={{ transform: mode === 'cards' ? 'rotate(180deg)' : undefined }}><path d="m4 6 4 4 4-4" /></svg>
+      </button>
+      <button type="button" onClick={() => set('hidden')} aria-label="Ocultar el resumen" title="Ocultar">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" /></svg>
+      </button>
+    </div>
+  );
+  if (mode === 'compact') return (
+    <div className="tk-sum compact">
+      <div className="tk-sum-line">
+        {items.map((i) => <a key={i.label} href={i.href} className={'tk-sum-chip' + (i.bad && i.value ? ' bad' : '')}><b className="num">{i.value}</b>{i.label}</a>)}
+      </div>
+      {tools}
+    </div>
+  );
+  return (
+    <div className="tk-sum">
+      <div className="stat-row">
+        {items.map((i) => <a key={i.label} href={i.href} className="stat"><span className="label">{i.label}</span><b className="num" style={{ color: i.bad && i.value ? 'var(--bad)' : undefined }}>{i.value}</b><span>{i.hint}</span></a>)}
+      </div>
+      {tools}
+    </div>
+  );
+}

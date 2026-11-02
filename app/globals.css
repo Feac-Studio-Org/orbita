@@ -951,3 +951,45 @@ a.rv-row:hover { background: var(--ink-3); border-radius: 8px; }
 .del-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px; }
 .del-yes { background: var(--bad); border-color: var(--bad); color: var(--ink); font-weight: 500; }
 .del-yes:hover { background: #f08a9d; border-color: #f08a9d; }
+
+/* Tareas: navegación por pestañas y resumen plegable */
+.tk-sum { position: relative; }
+.tk-sum:not(.compact) .stat-row { padding-right: 0; }
+.tk-sum a.stat:hover { border-color: var(--violet); }
+.tk-sum.compact { display: flex; align-items: center; gap: 8px; }
+.tk-sum-line { display: flex; flex-wrap: wrap; gap: 6px; flex: 1; min-width: 0; }
+.tk-sum-chip { display: inline-flex; align-items: baseline; gap: 6px; padding: 5px 12px; border: 1px solid var(--line); border-radius: 99px; font-size: 12.5px; color: var(--mute); background: var(--ink-2); }
+.tk-sum-chip b { color: var(--paper); font-weight: 600; font-size: 13px; }
+.tk-sum-chip.bad { border-color: var(--bad); }
+.tk-sum-chip.bad b { color: var(--bad); }
+.tk-sum-chip:hover { border-color: var(--violet); }
+.tk-sum-tools { display: flex; gap: 4px; flex: none; }
+.tk-sum:not(.compact) .tk-sum-tools { position: absolute; top: 8px; right: 8px; }
+.tk-sum-tools button { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 8px; color: var(--faint); border: 1px solid transparent; background: transparent; cursor: pointer; }
+.tk-sum-tools button:hover { color: var(--paper); border-color: var(--line-2); background: var(--ink-3); }
+.tk-sum-show { display: inline-flex; align-items: center; gap: 6px; align-self: flex-start; font-size: 12.5px; color: var(--faint); background: none; border: 0; cursor: pointer; padding: 2px 0; }
+.tk-sum-show:hover { color: var(--violet-hi); }
+.tk-tabs { margin-top: 2px; }
+.tk-lists { display: flex; flex-wrap: wrap; gap: 6px; align-items: flex-start; margin-top: -4px; }
+.tk-lists .chip { display: inline-flex; align-items: center; gap: 7px; cursor: pointer; }
+.tk-lists .chip:hover { border-color: var(--violet); color: var(--paper); }
+.tk-lists .chip .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.tk-lists .chip .num { font-size: 11px; color: var(--faint); }
+.tk-addlist summary { list-style: none; color: var(--violet-hi); border-style: dashed; }
+.tk-addlist summary::-webkit-details-marker { display: none; }
+.tk-addlist[open] { flex-basis: 100%; display: flex; flex-direction: column; gap: 8px; }
+.tk-addlist[open] summary { align-self: flex-start; }
+.tk-ptitle { display: flex; align-items: center; gap: 9px; }
+.tk-ptitle .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+.tk-ptitle .num { font-size: 13px; font-weight: 400; }
+.tk-panel .tk-listedit { margin: 0; position: relative; }
+.tk-panel .tk-listedit summary { list-style: none; }
+.tk-panel .tk-listedit summary::-webkit-details-marker { display: none; }
+.tk-listedit-form { position: absolute; right: 0; top: 38px; z-index: 5; background: var(--ink-3); border: 1px solid var(--line-2); border-radius: 12px; padding: 10px; width: min(420px, calc(100vw - 48px)); box-shadow: 0 16px 40px rgba(0,0,0,.45); }
+.tk-nolists { display: flex; flex-direction: column; gap: 8px; padding: 10px 4px; max-width: 560px; }
+.tk-nolists b { font-weight: 500; font-size: 15px; }
+.tk-panel .tk-qadd { padding-bottom: 8px; border-bottom: 1px solid var(--line); }
+@media (max-width: 760px) {
+  .tk-sum .stat-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .tk-sum:not(.compact) .tk-sum-tools { position: static; justify-content: flex-end; margin-top: 6px; }
+}
