@@ -4,6 +4,7 @@ import { fmtDate } from '@/lib/format';
 import { createNote, deleteNote, pinNote } from '@/lib/personal-actions';
 import { NoteEditor } from '@/components/note-editor';
 import { ViewHead } from '@/components/bits';
+import { DeleteButton } from '@/components/delete-button';
 
 export const metadata = { title: 'Notas' };
 
@@ -54,7 +55,7 @@ export default async function Notes({ searchParams }: { searchParams: Promise<{ 
               <NoteEditor key={sel.id} id={sel.id} title={sel.title} body={sel.body} folder={sel.folder} folders={folders} />
               <div className="inline">
                 <form action={pinNote}><input type="hidden" name="id" value={sel.id} /><input type="hidden" name="pinned" value={sel.pinned ? '0' : '1'} /><button className="pill mini" type="submit">{sel.pinned ? 'Quitar de arriba' : 'Fijar arriba'}</button></form>
-                <form action={deleteNote}><input type="hidden" name="id" value={sel.id} /><button className="pill mini danger" type="submit">Eliminar</button></form>
+                <DeleteButton action={deleteNote} fields={{ id: sel.id }} what={sel.title ? `la nota «${sel.title}»` : 'esta nota'} label="Eliminar" />
               </div>
             </>
           ) : <p className="muted">Elige una nota o crea una nueva.</p>}

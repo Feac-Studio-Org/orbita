@@ -10,6 +10,7 @@ import { HabitToggle } from '@/components/habit-toggle';
 import { HabitWizard } from '@/components/habit-wizard';
 import { TaskCheck } from '@/components/task-bits';
 import { type Check, type Habit, isDue } from '@/lib/habits';
+import { DeleteButton } from '@/components/delete-button';
 
 export const metadata = { title: 'Calendario' };
 
@@ -220,12 +221,11 @@ export default async function Calendar({ searchParams }: { searchParams: Promise
             <summary className="link" style={{ fontSize: 14 }}>Tus eventos ({evs.length})</summary>
             <div className="list">
               {evs.map((e) => (
-                <form key={e.id} action={deleteEvent} className="row" style={{ gridTemplateColumns: '10px minmax(0,1fr) auto' }}>
-                  <input type="hidden" name="id" value={e.id} />
+                <div key={e.id} className="row" style={{ gridTemplateColumns: '10px minmax(0,1fr) auto' }}>
                   <i style={{ width: 10, height: 10, borderRadius: 3, background: e.color }} />
                   <div className="t"><b>{e.title}</b><span>{bogota(e.starts_at).date}{e.all_day ? ' · todo el día' : ` · ${hhmm(bogota(e.starts_at).time)}`} · {REPEAT[e.repeat]}</span></div>
-                  <button className="pill mini danger" type="submit">Eliminar</button>
-                </form>
+                  <DeleteButton action={deleteEvent} fields={{ id: e.id }} what={`el evento «${e.title}»`} />
+                </div>
               ))}
             </div>
           </details>
@@ -254,12 +254,10 @@ export default async function Calendar({ searchParams }: { searchParams: Promise
           <summary className="link" style={{ fontSize: 14 }}>Quitar un bloque</summary>
           <div className="list">
             {(blocks ?? []).map((b) => (
-              <form key={b.id} action={removeBlock} className="row" style={{ gridTemplateColumns: 'minmax(0,1fr) auto' }}>
-                <input type="hidden" name="id" value={b.id} />
-                {b.gcal_event_id && <input type="hidden" name="google" value="on" />}
+              <div key={b.id} className="row" style={{ gridTemplateColumns: 'minmax(0,1fr) auto' }}>
                 <div className="t"><b>{b.title}</b><span>{b.weekdays.map((d: number) => DAYS[d - 1].slice(0, 3)).join(', ')} · {hhmm(b.start_time)} – {hhmm(b.end_time)}</span></div>
-                <button className="pill mini danger" type="submit">Quitar</button>
-              </form>
+                <DeleteButton action={removeBlock} fields={{ id: b.id, ...(b.gcal_event_id ? { google: 'on' } : {}) }} what={`el bloque «${b.title}»`} detail="Deja de aparecer en tu horario todas las semanas." />
+              </div>
             ))}
           </div>
         </details>

@@ -7,6 +7,7 @@ import { LIST_COLORS, daysLeft, dueLabel, type Task } from '@/lib/tasks';
 import { type Habit, isDue } from '@/lib/habits';
 import { TaskCheck } from '@/components/task-bits';
 import { ViewHead } from '@/components/bits';
+import { DeleteButton } from '@/components/delete-button';
 
 export const metadata = { title: 'Metas' };
 
@@ -138,7 +139,7 @@ export default async function Goals({ searchParams }: { searchParams: Promise<{ 
             </details>
             <div className="inline">
               <form action={completeGoal}><input type="hidden" name="id" value={sel.id} /><input type="hidden" name="done" value={sel.done_at ? '0' : '1'} /><button className="pill mini" type="submit">{sel.done_at ? 'Reabrir' : 'Marcar como cumplida'}</button></form>
-              <form action={deleteGoal}><input type="hidden" name="id" value={sel.id} /><button className="pill mini danger" type="submit">Eliminar meta</button></form>
+              <DeleteButton action={deleteGoal} fields={{ id: sel.id }} what={`la meta «${sel.title}»`} detail="Sus tareas y hábitos no se borran: solo se desvinculan." label="Eliminar meta" />
             </div>
           </section>
         );

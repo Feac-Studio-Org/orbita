@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { getContext } from '@/lib/data';
 import { Empty, ViewHead } from '@/components/bits';
 import { addProperty, addRow, createDatabase, deleteRow, updateRow } from '@/lib/actions';
+import { DeleteButton } from '@/components/delete-button';
 
 export const metadata = { title: 'Mis bases de datos' };
 
@@ -49,7 +50,7 @@ export default async function Bases({ searchParams }: { searchParams: Promise<{ 
                     {props.map((p, n) => <td key={p.key} className={n ? 'muted' : ''}>{p.type === 'select' && r.values[p.key] ? <span className="tag v">{r.values[p.key]}</span> : r.values[p.key]}</td>)}
                     <td style={{ whiteSpace: 'nowrap', textAlign: 'right' }}>
                       <Link className="link" href={`/personal/bases?db=${db.id}&editar=${r.id}`}>Editar</Link>{' '}
-                      <form action={deleteRow} style={{ display: 'inline' }}><input type="hidden" name="id" value={r.id} /><input type="hidden" name="db" value={db.id} /><button className="link" type="submit" style={{ color: 'var(--bad)' }}>Quitar</button></form>
+                      <DeleteButton action={deleteRow} fields={{ id: r.id, db: db.id }} what="esta fila" />
                     </td>
                   </tr>
                 ))}

@@ -1,9 +1,10 @@
 import Link from 'next/link';
 import { getContext } from '@/lib/data';
 import { addDays, fmtDate, isoWeekday, todayISO } from '@/lib/format';
-import { createList, createTask, deleteTask, updateList, updateTask } from '@/lib/task-actions';
+import { createList, createTask, deleteList, deleteTask, updateList, updateTask } from '@/lib/task-actions';
 import { LIST_COLORS, TASK_REPEAT, dueLabel, remindText, type Task, type TaskList } from '@/lib/tasks';
-import { DeleteList, StepCheck, TaskCheck, TaskForm } from '@/components/task-bits';
+import { StepCheck, TaskCheck, TaskForm } from '@/components/task-bits';
+import { DeleteButton } from '@/components/delete-button';
 import { ViewHead } from '@/components/bits';
 
 export const metadata = { title: 'Tareas' };
@@ -161,19 +162,17 @@ export default async function Tasks({ searchParams }: { searchParams: Promise<{ 
             <section className="panel tk-detail">
               <div className="panel-head">
                 <div className="inline"><TaskCheck id={selected.id} done={!!selected.done_at} color={listOf(selected.list_id)?.color} /><h2>{selected.title}</h2></div>
-                <Link className="link" href={close}>Cerrar</Link>
+                <div className="inline"><DeleteButton action={deleteTask} fields={{ id: selected.id, from }} what={`la tarea «${selected.title}»`} /><Link className="link" href={close}>Cerrar</Link></div>
               </div>
               {selected.due_date && !selected.done_at && <p className="note">{remindText(selected.remind_days)} a las {selected.remind_time.slice(0, 5)}{selected.remind_overdue ? ', y cada día si se vence.' : '.'}</p>}
               {selected.steps.length > 0 && (
                 <div className="tk-steps">{selected.steps.map((x, i) => <StepCheck key={i} id={selected.id} index={i} done={x.done} text={x.t} />)}</div>
               )}
-              <TaskForm action={updateTask} lists={lists} goals={goals} task={selected} from={from} submit="Guardar cambios">
-                <button className="pill mini danger" type="submit" formAction={deleteTask} formNoValidate>Eliminar</button>
-              </TaskForm>
+              <TaskForm action={updateTask} lists={lists} goals={goals} task={selected} from={from} submit="Guardar cambios" />
             </section>
           )}
           <div className="panel tk-panel">
-            {list && <div className="panel-head"><h2><i className="dot" style={{ background: list.color, marginRight: 8 }} />{list.name}</h2><DeleteList id={list.id} name={list.name} /></div>}
+            {list && <div className="panel-head"><h2><i className="dot" style={{ background: list.color, marginRight: 8 }} />{list.name}</h2><DeleteButton action={deleteList} fields={{ id: list.id }} what={`la lista «${list.name}»`} detail="Sus tareas no se borran: quedan en «Sin lista»." /></div>}
             {body}
           </div>
         </div>

@@ -935,3 +935,19 @@ a.rv-row:hover { background: var(--ink-3); border-radius: 8px; }
   .rv-goal { grid-template-columns: minmax(0, 1fr) auto; }
   .rv-goal .bar { grid-column: 1 / -1; grid-row: 2; }
 }
+
+/* ---------- Eliminar con confirmación ---------- */
+.del-btn { display: inline-grid; grid-auto-flow: column; align-items: center; gap: 6px; height: 30px; min-width: 30px; padding: 0 7px; border: 1px solid var(--line-2); border-radius: 9px; color: var(--mute); background: transparent; font-size: 12px; cursor: pointer; transition: color .2s, border-color .2s, background .2s; }
+.del-btn.with-label { padding: 0 11px 0 9px; border-radius: 99px; }
+.del-btn:hover { color: var(--bad); border-color: var(--bad); background: var(--bad-wash); }
+.del-dialog { margin: auto; padding: 0; border: 1px solid var(--line-2); border-radius: 18px; background: var(--ink-2); color: var(--paper); width: min(380px, calc(100vw - 32px)); box-shadow: 0 24px 60px rgba(0,0,0,.55); }
+.del-dialog::backdrop { background: rgba(10, 9, 12, .72); backdrop-filter: blur(3px); }
+.del-dialog[open] { animation: del-in .22s var(--ease); }
+@keyframes del-in { from { opacity: 0; transform: translateY(8px) scale(.98); } }
+.del-box { display: flex; flex-direction: column; gap: 8px; padding: 22px; }
+.del-ico { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 12px; color: var(--bad); background: var(--bad-wash); margin-bottom: 4px; }
+.del-box h3 { font-size: 17px; font-weight: 500; letter-spacing: -.01em; line-height: 1.3; overflow-wrap: anywhere; }
+.del-box p { color: var(--mute); font-size: 13.5px; }
+.del-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px; }
+.del-yes { background: var(--bad); border-color: var(--bad); color: var(--ink); font-weight: 500; }
+.del-yes:hover { background: #f08a9d; border-color: #f08a9d; }

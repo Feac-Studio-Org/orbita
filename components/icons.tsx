@@ -20,6 +20,7 @@ const P = {
   flag: <path d="M3.5 14V2.5M3.5 3h8l-1.6 2.8L11.5 8.5h-8" />,
   note: <><path d="M4 2.5h5.5l3 3V13.5H4Z" /><path d="M9.5 2.5v3h3M6 8.5h4M6 11h4" /></>,
   search: <><circle cx="7" cy="7" r="4.5" /><path d="m10.5 10.5 3 3" /></>,
+  trash: <path d="M2.5 4.5h11M6 4.5V3h4v1.5M4 4.5l.7 9h6.6l.7-9M6.7 7v4.5M9.3 7v4.5" />,
 };
 export type IconName = keyof typeof P;
 

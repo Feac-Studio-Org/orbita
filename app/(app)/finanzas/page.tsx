@@ -3,6 +3,7 @@ import { getContext } from '@/lib/data';
 import { FIN_STATUS, PERIOD, fmtDate, money } from '@/lib/format';
 import { Empty, ViewHead } from '@/components/bits';
 import { createExpense, deleteExpense, setExpenseStatus } from '@/lib/actions';
+import { DeleteButton } from '@/components/delete-button';
 
 export const metadata = { title: 'Finanzas' };
 
@@ -59,7 +60,7 @@ export default async function Finance({ searchParams }: { searchParams: Promise<
               <td style={{ whiteSpace: 'nowrap', textAlign: 'right' }}>
                 {f.status === 'pending' && <form action={setExpenseStatus} style={{ display: 'inline' }}><input type="hidden" name="id" value={f.id} /><input type="hidden" name="status" value="paid" /><input type="hidden" name="return" value={ret} /><button className="link" type="submit">Pagado</button></form>}
                 {f.status === 'active' && f.period !== 'once' && <form action={setExpenseStatus} style={{ display: 'inline' }}><input type="hidden" name="id" value={f.id} /><input type="hidden" name="status" value="cancelled" /><input type="hidden" name="return" value={ret} /><button className="link" type="submit">Cancelar</button></form>}
-                {' '}<form action={deleteExpense} style={{ display: 'inline' }}><input type="hidden" name="id" value={f.id} /><input type="hidden" name="return" value={ret} /><button className="link" type="submit" style={{ color: 'var(--bad)' }}>Quitar</button></form>
+                {' '}<DeleteButton action={deleteExpense} fields={{ id: f.id, return: ret }} what={`«${f.concept}»`} />
               </td>
             </tr>
           ))}
