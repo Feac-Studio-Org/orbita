@@ -917,3 +917,4 @@ details.add[open] > summary { margin-bottom: 12px; }
 .rv-habit { display: grid; grid-template-columns: minmax(0, 1fr) minmax(80px, 2fr) auto; gap: 12px; align-items: center; padding: 6px 0; font-size: 13.5px; }
 .g-3-form { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 @media (max-width: 860px) { .g-3-form { grid-template-columns: minmax(0, 1fr); } }
+.field > .tk-inline { align-self: flex-start; }
