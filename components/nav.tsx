@@ -8,11 +8,12 @@ type NavProject = { key: string; name: string; color: string; logo?: string | nu
 type NavSpace = { id: string; name: string; kind: string; roleLabel: string; isOwner: boolean; portfolio: boolean; members: boolean; projects: NavProject[] };
 type Props = {
   name: string; initial: string; avatarUrl?: string | null; spaces: NavSpace[];
-  modules: { messages: boolean; finance: boolean; assistant: boolean; calendar: boolean; bases: boolean };
+  modules: { tasks: boolean; habits: boolean; projects: boolean; messages: boolean; finance: boolean; assistant: boolean; calendar: boolean; bases: boolean };
+  counts: { tasks: number };
   unread: number;
 };
 
-export function Sidebar({ name, initial, avatarUrl, spaces, modules, unread }: Props) {
+export function Sidebar({ name, initial, avatarUrl, spaces, modules, unread, counts }: Props) {
   const path = usePathname();
   const search = useSearchParams();
   const [open, setOpen] = useState(false);
@@ -34,10 +35,12 @@ export function Sidebar({ name, initial, avatarUrl, spaces, modules, unread }: P
     setClosed(next);
     try { localStorage.setItem('orbita-nav', JSON.stringify(next)); } catch {}
   }
-  const allClosed = spaces.every((s) => closed[s.id]);
+  // El espacio personal solo aparece si tiene algo que mostrar (bases o proyectos); los de equipo, si usas proyectos o ya estás en uno.
+  const shown = spaces.filter((s) => s.kind === 'personal' ? modules.bases || (modules.projects && s.projects.length > 0) : s.kind === 'habits' ? modules.habits : modules.projects || s.projects.length > 0);
+  const allClosed = shown.every((s) => closed[s.id]);
   function toggleAll() {
     const next: Record<string, boolean> = {};
-    spaces.forEach((s) => (next[s.id] = !allClosed));
+    shown.forEach((s) => (next[s.id] = !allClosed));
     setClosed(next);
     try { localStorage.setItem('orbita-nav', JSON.stringify(next)); } catch {}
   }
@@ -58,20 +61,22 @@ export function Sidebar({ name, initial, avatarUrl, spaces, modules, unread }: P
       <Link href="/" className="brand"><img src="/logo.png" alt="" /><b>Órbita</b></Link>
       <Link href="/perfil" className="me">
         {avatarUrl ? <img src={avatarUrl} alt="" style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover', flex: 'none' }} /> : <span className="avatar">{initial}</span>}
-        <div style={{ minWidth: 0 }}><b>{name}</b><span>{spaces.length} espacios · ver perfil</span></div>
+        <div style={{ minWidth: 0 }}><b>{name}</b><span>Ver perfil</span></div>
       </Link>
       <nav className="navgroup">
         {item('/', 'Inicio', 'home')}
         {item('/notificaciones', 'Notificaciones', 'bell', unread ? <span className="count">{unread}</span> : null)}
+        {modules.tasks && item('/tareas', 'Tareas', 'check', counts.tasks ? <span className="count">{counts.tasks}</span> : null)}
+        {modules.habits && item('/habitos', 'Hábitos', 'flame', null, path === '/habitos')}
         {modules.calendar && item('/calendario', 'Calendario', 'cal')}
         {modules.messages && item('/mensajes', 'Mensajes', 'msg')}
         {modules.finance && item('/finanzas', 'Finanzas', 'money')}
       </nav>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 8px' }}>
+      {shown.length > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 8px' }}>
         <span className="label">Espacios</span>
         <button className="link" style={{ fontSize: 11.5 }} onClick={toggleAll}>{allClosed ? 'Expandir todo' : 'Contraer todo'}</button>
-      </div>
-      {spaces.map((s) => {
+      </div>}
+      {shown.map((s) => {
         const isOpen = !closed[s.id];
         return (
           <details key={s.id} className="space navgroup" open={isOpen} onToggle={(e) => { const o = (e.currentTarget as HTMLDetailsElement).open; if (o !== isOpen) toggleSpace(s.id, o); }}>
@@ -82,8 +87,7 @@ export function Sidebar({ name, initial, avatarUrl, spaces, modules, unread }: P
             </summary>
             {s.kind === 'personal' && (
               <>
-                {item('/personal', 'Mi espacio', { color: '#9a92a8' })}
-                {modules.bases && item('/personal/bases', 'Mis bases de datos', { color: '#5fc9c0' })}
+                {modules.bases && item('/personal/bases', 'Mis bases de datos', 'grid')}
               </>
             )}
             {s.kind === 'habits' && (
@@ -97,12 +101,12 @@ export function Sidebar({ name, initial, avatarUrl, spaces, modules, unread }: P
             {s.portfolio && item(`/portafolio/${s.id}`, 'Portafolio', 'chart')}
             {s.projects.map((p) => item(`/p/${p.key}`, p.name, { color: p.color, logo: p.logo }, <span className="key">{p.key}</span>))}
             {s.kind === 'team' && s.members && item(`/miembros/${s.id}`, 'Miembros y roles', 'people')}
-            {s.isOwner && s.kind !== 'habits' && item(`/nuevo/proyecto?espacio=${s.id}`, 'Nuevo proyecto', 'plus', null, false)}
+            {s.isOwner && s.kind !== 'habits' && modules.projects && item(`/nuevo/proyecto?espacio=${s.id}`, 'Nuevo proyecto', 'plus', null, false)}
           </details>
         );
       })}
       <nav className="navgroup" style={{ marginTop: 'auto' }}>
-        {item('/nuevo/espacio', 'Crear un espacio', 'plus')}
+        {(modules.projects || modules.habits) && item('/nuevo/espacio', modules.projects ? 'Crear un espacio' : 'Crear grupo de hábitos', 'plus')}
         {modules.assistant && item('/asistente', 'Asistente', 'plug', <span className="key">MCP</span>)}
         {item('/ajustes', 'Ajustes', 'gear')}
       </nav>

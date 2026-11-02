@@ -789,3 +789,77 @@ details.add[open] > summary { margin-bottom: 12px; }
   .hc { width: 28px; height: 28px; border-radius: 8px; }
   .mw-habit .hw-badge { display: none; }
 }
+
+/* ---------- Tareas personales ---------- */
+.tk-layout { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 16px; align-items: start; }
+.tk-side { display: flex; flex-direction: column; gap: 10px; position: sticky; top: 76px; }
+.tk-nav { display: flex; flex-direction: column; gap: 2px; }
+.tk-nav a { display: flex; align-items: center; gap: 9px; padding: 8px 10px; border-radius: 9px; font-size: 13.5px; color: var(--mute); }
+.tk-nav a:hover { background: var(--ink-3); color: var(--paper); }
+.tk-nav a[aria-current='page'] { background: var(--ink-4); color: var(--paper); }
+.tk-nav a .num { margin-left: auto; font-size: 12px; color: var(--faint); }
+.tk-nav .dot, .tk-panel .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.tk-newlist { display: flex; gap: 6px; padding: 0 4px; }
+.tk-newlist .inp { padding: 6px 10px; font-size: 13px; }
+.tk-body { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.tk-group + .tk-group { margin-top: 10px; }
+.tk-gh { display: flex; align-items: baseline; gap: 8px; padding: 0 4px 6px; flex-wrap: wrap; }
+.tk-gh h3 { font-size: 13px; font-weight: 600; }
+.tk-gh .note { margin-left: auto; }
+.tk-rows { display: flex; flex-direction: column; }
+.tk-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 9px 6px; border-top: 1px solid var(--line); border-radius: 8px; }
+.tk-row:first-child { border-top: 0; }
+.tk-row.sel { background: var(--ink-3); }
+.tk-row.done .tk-main b { color: var(--faint); text-decoration: line-through; }
+.tk-main { display: grid; gap: 2px; min-width: 0; }
+.tk-main b { font-weight: 500; font-size: 14px; overflow-wrap: anywhere; display: flex; align-items: center; gap: 7px; }
+.tk-main:hover b { color: var(--violet-hi); }
+.tk-main span { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 12px; color: var(--mute); }
+.tk-main span:empty { display: none; }
+.tk-main i { font-style: normal; }
+.tk-list::before { content: ''; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--lc); margin-right: 5px; }
+.tk-prio { width: 6px; height: 6px; border-radius: 50%; background: var(--bad); flex: none; }
+.tk-check { width: 22px; height: 22px; border-radius: 50%; border: 1.6px solid var(--tc, var(--violet-hi)); display: grid; place-items: center; color: transparent; flex: none; transition: background .15s, color .15s; }
+.tk-check:hover { color: var(--tc, var(--violet-hi)); }
+.tk-check.on { background: var(--tc, var(--violet-hi)); color: var(--ink); }
+.tk-empty { padding: 18px 6px; }
+.tk-quick { display: flex; flex-wrap: wrap; gap: 6px; }
+.tk-quick .chip { cursor: pointer; background: transparent; }
+.tk-quick .chip.on { background: var(--violet-wash); border-color: var(--violet); color: var(--paper); }
+.tk-quick .chip input { position: absolute; opacity: 0; width: 1px; height: 1px; pointer-events: none; }
+.tk-form .field > span, .tk-remind legend { font-size: 12.5px; color: var(--mute); margin-bottom: 2px; }
+.tk-remind { border: 0; display: flex; flex-direction: column; gap: 8px; }
+.tk-inline { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--mute); align-self: end; padding: 4px 0; cursor: pointer; }
+.tk-inline input { width: 18px; height: 18px; accent-color: var(--violet); flex: none; }
+.tk-more { display: flex; flex-direction: column; gap: 10px; }
+.tk-more[open] summary { margin-bottom: 10px; }
+.tk-more > .field + .field { margin-top: 10px; }
+.tk-steps { display: flex; flex-direction: column; gap: 4px; }
+.tk-step { display: flex; align-items: center; gap: 10px; font-size: 13.5px; padding: 5px 2px; cursor: pointer; }
+.tk-step input { width: 17px; height: 17px; accent-color: var(--violet); }
+.tk-step.on span { color: var(--faint); text-decoration: line-through; }
+.tk-listedit { margin-bottom: 12px; display: flex; flex-direction: column; gap: 8px; }
+.tk-listedit[open] summary { margin-bottom: 8px; }
+.tk-qadd { display: flex; flex-direction: column; gap: 8px; }
+@media (max-width: 860px) {
+  .tk-layout { grid-template-columns: minmax(0, 1fr); }
+  .tk-side { position: static; }
+  .tk-side .tk-nav { flex-direction: row; flex-wrap: wrap; }
+  .tk-side .tk-nav a { padding: 6px 10px; border: 1px solid var(--line); }
+  .tk-row { grid-template-columns: auto minmax(0, 1fr); }
+  .tk-row > .tag { grid-column: 2; justify-self: start; }
+}
+
+/* ---------- Bienvenida ---------- */
+.onb { max-width: 860px; margin: 4vh auto 0; display: flex; flex-direction: column; gap: 14px; }
+.onb h1 { font-size: clamp(26px, 4vw, 38px); font-weight: 500; letter-spacing: -.02em; line-height: 1.15; }
+.onb-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.onb-opt { display: flex; gap: 12px; align-items: flex-start; padding: 14px 16px; border: 1px solid var(--line-2); border-radius: 14px; background: var(--ink-2); cursor: pointer; transition: border-color .2s, background .2s; }
+.onb-opt:hover { border-color: var(--violet); }
+.onb-opt:has(input:checked) { border-color: var(--violet); background: rgba(157, 78, 221, .08); }
+.onb-opt input { width: 18px; height: 18px; accent-color: var(--violet); margin-top: 2px; flex: none; }
+.onb-opt b { display: block; font-weight: 500; }
+.onb-opt small { font-size: 12.5px; color: var(--mute); }
+@media (max-width: 640px) { .onb-grid { grid-template-columns: minmax(0, 1fr); } }
+
+.stat-row.auto { grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }

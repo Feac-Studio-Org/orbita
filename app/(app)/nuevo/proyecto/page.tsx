@@ -23,6 +23,12 @@ export default async function NewProject({ searchParams }: { searchParams: Promi
           <label className="field">De qué se trata<input name="description" placeholder="Una línea" /></label>
         </div>
         <p className="note">Las tareas se numeran con la clave: CZ-1, CZ-2… Si la dejas vacía, se toma de las primeras letras del nombre.</p>
+        <fieldset className="field" style={{ border: 0 }}>
+          <legend style={{ marginBottom: 6 }}>Qué va a usar (se puede cambiar después en Configurar)</legend>
+          <label className="tk-inline"><input type="checkbox" name="docs" defaultChecked />Documentos</label>
+          <label className="tk-inline"><input type="checkbox" name="sprints" />Sprints: entregas de 1 o 2 semanas</label>
+          <label className="tk-inline"><input type="checkbox" name="epics" />Épicas: fases o módulos grandes</label>
+        </fieldset>
         <button className="pill solid" type="submit" style={{ alignSelf: 'flex-start' }}>Crear proyecto</button>
       </form>
     </>

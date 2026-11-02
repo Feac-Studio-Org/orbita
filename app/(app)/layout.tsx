@@ -2,16 +2,17 @@ import { Suspense } from 'react';
 import { Sidebar } from '@/components/nav';
 import { Icon } from '@/components/icons';
 import { getContext } from '@/lib/data';
-import { ROLE, initial } from '@/lib/format';
+import { ROLE, initial, todayISO } from '@/lib/format';
 import { AutoBackup } from '@/components/auto-backup';
 
 export const maxDuration = 300;
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const { supabase, user, profile, spaces, modules } = await getContext();
-  const [{ count }, { data: bk }] = await Promise.all([
+  const [{ count }, { data: bk }, { count: tasksDue }] = await Promise.all([
     supabase.from('notifications').select('id', { count: 'exact', head: true }).eq('user_id', user.id).is('read_at', null),
     supabase.from('backup_settings').select('auto_weekly, last_run').eq('user_id', user.id).maybeSingle(),
+    supabase.from('tasks').select('id', { count: 'exact', head: true }).eq('user_id', user.id).is('done_at', null).lte('due_date', todayISO()),
   ]);
   const backupDue = !!bk?.auto_weekly && (!bk.last_run || Date.now() - new Date(bk.last_run).getTime() > 7 * 864e5);
   const name = profile?.full_name || user.email || '';
@@ -24,7 +25,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     <div className="app">
       {backupDue && <AutoBackup />}
       <Suspense>
-        <Sidebar name={name} initial={initial(name)} avatarUrl={profile?.avatar_url} spaces={navSpaces} modules={modules} unread={count ?? 0} />
+        <Sidebar name={name} initial={initial(name)} avatarUrl={profile?.avatar_url} spaces={navSpaces} modules={modules} unread={count ?? 0} counts={{ tasks: tasksDue ?? 0 }} />
       </Suspense>
       <div className="main">
         <header className="top">

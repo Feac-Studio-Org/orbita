@@ -153,7 +153,10 @@ export async function createSpace(f: FormData) {
     name: s(f, 'name'), description: s(f, 'description') || (habits ? 'Hábitos en comunidad' : ''), kind: habits ? 'habits' : 'team', created_by: user.id,
     modules: habits ? { portfolio: false, finance: false, members: true } : undefined,
   }).select('id').single();
-  if (error) back('/nuevo/espacio', 'No se pudo crear: ' + error.message);
+  if (error) back(habits ? '/habitos' : '/nuevo/espacio', 'No se pudo crear: ' + error.message);
+  const { data: me } = await supabase.from('profiles').select('modules').eq('id', user.id).single();
+  const key = habits ? 'habits' : 'projects';
+  if (!(me?.modules as Record<string, boolean> | null)?.[key]) await supabase.from('profiles').update({ modules: { ...(me?.modules ?? {}), [key]: true } }).eq('id', user.id);
   revalidatePath('/', 'layout');
   if (habits) redirect(`/habitos/${data!.id}`);
   redirect(`/nuevo/proyecto?espacio=${data!.id}&ok=${encodeURIComponent('Espacio creado. Ahora crea su primer proyecto.')}`);
@@ -167,7 +170,8 @@ export async function createProject(f: FormData) {
   if (!/^[A-Z]{2,6}$/.test(key)) back(`/nuevo/proyecto?espacio=${space}`, 'La clave debe tener de 2 a 6 letras, sin tildes ni números.');
   const colors = ['#c77dff', '#4cc38a', '#cfaf6e', '#5fc9c0', '#ec6f86', '#7c6cf0', '#e0915a'];
   const { count } = await supabase.from('projects').select('id', { count: 'exact', head: true }).eq('space_id', space);
-  const { error } = await supabase.from('projects').insert({ space_id: space, key, name, description: s(f, 'description'), color: colors[(count ?? 0) % colors.length], position: (count ?? 0) + 1 });
+  const { error } = await supabase.from('projects').insert({ space_id: space, key, name, description: s(f, 'description'), color: colors[(count ?? 0) % colors.length], position: (count ?? 0) + 1,
+    features: { sprints: f.get('sprints') === 'on', epics: f.get('epics') === 'on', docs: f.get('docs') === 'on' } });
   if (error) back(`/nuevo/proyecto?espacio=${space}`, error.message.includes('duplicate') ? `Ya existe un proyecto con la clave ${key}.` : 'No se pudo crear: ' + error.message);
   revalidatePath('/', 'layout');
   redirect(`/p/${key}`);
@@ -221,9 +225,23 @@ export async function deleteBlock(f: FormData) {
 }
 
 /* ---------- Ajustes y perfil ---------- */
+const MODULE_KEYS = ['tasks', 'habits', 'projects', 'messages', 'finance', 'assistant', 'calendar', 'bases'];
+
+export async function finishOnboarding(f: FormData) {
+  const { supabase, user } = await requireUser();
+  const modules = Object.fromEntries(MODULE_KEYS.map((m) => [m, f.get(m) === 'on']));
+  // Mensajes y asistente acompañan a proyectos: quien trabaja en equipo los usa.
+  modules.messages = !!modules.projects;
+  modules.assistant = false;
+  const { data: p } = await supabase.from('profiles').select('preferences').eq('id', user.id).single();
+  await supabase.from('profiles').update({ modules, preferences: { ...(p?.preferences ?? {}), onboarded: true } }).eq('id', user.id);
+  revalidatePath('/', 'layout');
+  redirect(modules.tasks ? '/tareas?nueva=1&vista=hoy' : modules.habits ? '/habitos' : modules.projects ? '/nuevo/espacio' : '/');
+}
+
 export async function saveModules(f: FormData) {
   const { supabase, user } = await requireUser();
-  const modules = Object.fromEntries(['messages', 'finance', 'assistant', 'calendar', 'bases'].map((m) => [m, f.get(m) === 'on']));
+  const modules = Object.fromEntries(MODULE_KEYS.map((m) => [m, f.get(m) === 'on']));
   await supabase.from('profiles').update({ modules }).eq('id', user.id);
   const spaces = f.getAll('space').map(String);
   for (const id of spaces) {
@@ -413,6 +431,16 @@ export async function autoBackup() {
 }
 
 /* ---------- Sprints ---------- */
+export async function setProjectFeatures(f: FormData) {
+  const { supabase } = await requireUser();
+  const key = s(f, 'project');
+  const features = Object.fromEntries(['sprints', 'epics', 'docs'].map((k) => [k, f.get(k) === 'on']));
+  const { error } = await supabase.from('projects').update({ features }).eq('key', key);
+  if (error) back(`/p/${key}?tab=configurar`, 'No se pudo guardar: ' + error.message);
+  revalidatePath('/', 'layout');
+  back(`/p/${key}?tab=configurar`, 'Listo. Las pestañas del proyecto ya muestran solo lo que activaste.', 'ok');
+}
+
 export async function createSprint(f: FormData) {
   const { supabase } = await requireUser();
   const key = s(f, 'project');

@@ -14,6 +14,9 @@ const P = {
   menu: <path d="M2 4h12M2 8h12M2 12h12" />,
   out: <path d="M6 2.5H3.5v11H6M10 5l3 3-3 3M13 8H6" />,
   chev: <path d="m4 6 4 4 4-4" />,
+  check: <><rect x="2.5" y="2.5" width="11" height="11" rx="3" /><path d="m5.2 8.2 2 2 3.8-4.2" /></>,
+  flame: <path d="M8 14c-2.8 0-4.5-1.8-4.5-4.2C3.5 6.6 6.5 5.2 7 2c2.2 1.4 3 3.4 2.6 5.2.8-.3 1.3-1 1.5-1.8 1 1 1.4 2.4 1.4 3.9C12.5 12 10.8 14 8 14Z" />,
+  layers: <><path d="M8 2.5 14 5.5 8 8.5 2 5.5Z" /><path d="m2 8.5 6 3 6-3M2 11.2l6 3 6-3" /></>,
   search: <><circle cx="7" cy="7" r="4.5" /><path d="m10.5 10.5 3 3" /></>,
 };
 export type IconName = keyof typeof P;

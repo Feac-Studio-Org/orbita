@@ -5,8 +5,14 @@ import { saveModules } from '@/lib/actions';
 
 export const metadata = { title: 'Ajustes' };
 
+const TOOLS = [
+  ['tasks', 'Tareas', 'Pendientes con fecha límite y recordatorios, organizados en listas.'],
+  ['habits', 'Hábitos', 'Hábitos diarios o semanales, solos o en grupo.'],
+  ['projects', 'Proyectos', 'Espacios de equipo con tableros, documentos y, si los activas por proyecto, sprints y épicas.'],
+] as const;
+
 const MODS = [
-  ['messages', 'Mensajes', 'Canales por espacio y proyecto. Si trabajas solo, apágalo.'],
+  ['messages', 'Mensajes', 'Conversaciones directas y canales por espacio. Si trabajas solo, apágalo.'],
   ['finance', 'Finanzas', 'Gastos, suscripciones e ingresos, separados por espacio y por proyecto.'],
   ['assistant', 'Asistente (MCP)', 'Conecta la IA que prefieras para que lea y actualice tus espacios.'],
   ['calendar', 'Calendario', 'Semana con tu horario y, si lo conectas, Google Calendar.'],
@@ -27,14 +33,20 @@ export default async function Settings({ searchParams }: { searchParams: Promise
       </Link>
       <form className="form" action={saveModules}>
         <section className="panel">
-          <div className="panel-head"><h2>Módulos</h2></div>
-          <div>{MODS.map(([k, t, d]) => (
+          <div className="panel-head"><h2>Herramientas</h2><span className="label">Úsalas juntas o por separado</span></div>
+          <div>{TOOLS.map(([k, t, d]) => (
             <label key={k} className="toggle-row"><div><b>{t}</b><span>{d}</span></div><input type="checkbox" name={k} defaultChecked={modules[k]} style={{ accentColor: 'var(--violet)', width: 18, height: 18 }} /></label>
           ))}</div>
         </section>
         <section className="panel">
+          <div className="panel-head"><h2>Extras</h2></div>
+          <div>{MODS.map(([k, t, d]) => (
+            <label key={k} className="toggle-row"><div><b>{t}</b><span>{d}</span></div><input type="checkbox" name={k} defaultChecked={modules[k]} style={{ accentColor: 'var(--violet)', width: 18, height: 18 }} /></label>
+          ))}</div>
+        </section>
+        {own.some((s) => s.kind !== 'habits') && <section className="panel">
           <div className="panel-head"><h2>Por espacio</h2><span className="label">Solo los espacios donde eres dueño</span></div>
-          {own.map((s) => (
+          {own.filter((s) => s.kind !== 'habits').map((s) => (
             <div key={s.id}>
               <input type="hidden" name="space" value={s.id} />
               <span className="label">{s.name}</span>
@@ -47,7 +59,7 @@ export default async function Settings({ searchParams }: { searchParams: Promise
               ))}
             </div>
           ))}
-        </section>
+        </section>}
         <button className="pill solid" type="submit" style={{ alignSelf: 'flex-start' }}>Guardar ajustes</button>
       </form>
     </>
