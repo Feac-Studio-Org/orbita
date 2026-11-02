@@ -17,6 +17,8 @@ const P = {
   check: <><rect x="2.5" y="2.5" width="11" height="11" rx="3" /><path d="m5.2 8.2 2 2 3.8-4.2" /></>,
   flame: <path d="M8 14c-2.8 0-4.5-1.8-4.5-4.2C3.5 6.6 6.5 5.2 7 2c2.2 1.4 3 3.4 2.6 5.2.8-.3 1.3-1 1.5-1.8 1 1 1.4 2.4 1.4 3.9C12.5 12 10.8 14 8 14Z" />,
   layers: <><path d="M8 2.5 14 5.5 8 8.5 2 5.5Z" /><path d="m2 8.5 6 3 6-3M2 11.2l6 3 6-3" /></>,
+  flag: <path d="M3.5 14V2.5M3.5 3h8l-1.6 2.8L11.5 8.5h-8" />,
+  note: <><path d="M4 2.5h5.5l3 3V13.5H4Z" /><path d="M9.5 2.5v3h3M6 8.5h4M6 11h4" /></>,
   search: <><circle cx="7" cy="7" r="4.5" /><path d="m10.5 10.5 3 3" /></>,
 };
 export type IconName = keyof typeof P;

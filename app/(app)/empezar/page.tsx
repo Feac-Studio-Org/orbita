@@ -7,7 +7,11 @@ const TOOLS = [
   ['tasks', 'Tareas', 'Pendientes con fecha límite, por listas (universidad, casa, trámites). Te avisa antes de que se venzan.'],
   ['habits', 'Hábitos', 'Lo que quieres hacer seguido: ejercicio, leer, estudiar. Márcalo cada día, solo o en grupo con amigos.'],
   ['projects', 'Proyectos', 'Trabajo en equipo: tableros, documentos y, si los necesitas, sprints y épicas.'],
-  ['calendar', 'Calendario', 'Tu horario de la semana y tus eventos, con recordatorios.'],
+  ['goals', 'Metas', 'Lo que quieres lograr, con fecha y avance.'],
+  ['calendar', 'Calendario', 'Tu horario de la semana, tus eventos y tus plazos, con recordatorios.'],
+  ['notes', 'Notas', 'Apuntes e ideas, por carpetas.'],
+  ['journal', 'Diario', 'Unas líneas al día con tu ánimo.'],
+  ['review', 'Revisión semanal', 'Cada domingo: cómo te fue y qué viene.'],
   ['finance', 'Finanzas', 'Gastos, suscripciones e ingresos.'],
   ['bases', 'Bases de datos', 'Tablas a tu medida, por ejemplo tus materias.'],
 ] as const;
@@ -25,7 +29,7 @@ export default async function Welcome() {
         <div className="onb-grid">
           {TOOLS.map(([k, t, d]) => (
             <label key={k} className="onb-opt">
-              <input type="checkbox" name={k} defaultChecked={k === 'tasks' || k === 'habits' || k === 'calendar' || (k === 'projects' && modules.projects)} />
+              <input type="checkbox" name={k} defaultChecked={['tasks', 'habits', 'calendar', 'goals', 'notes', 'review'].includes(k) || (k === 'projects' && modules.projects)} />
               <span><b>{t}</b><small>{d}</small></span>
             </label>
           ))}

@@ -37,8 +37,8 @@ const iso = (n: number) => {
 const QUICK: [string, number][] = [['Hoy', 0], ['Mañana', 1], ['En 3 días', 3], ['En 4 días', 4], ['En una semana', 7], ['En 2 semanas', 14]];
 
 /** Formulario completo de tarea: plazo con atajos, recordatorios a elegir, pasos y repetición. */
-export function TaskForm({ action, lists, task, from, defaultList, submit = 'Crear tarea', children }: {
-  action: (f: FormData) => void; lists: TaskList[]; task?: Task; from: string; defaultList?: string | null; submit?: string; children?: React.ReactNode;
+export function TaskForm({ action, lists, goals = [], task, from, defaultList, submit = 'Crear tarea', children }: {
+  action: (f: FormData) => void; lists: TaskList[]; goals?: { id: string; title: string }[]; task?: Task & { goal_id?: string | null }; from: string; defaultList?: string | null; submit?: string; children?: React.ReactNode;
 }) {
   const [due, setDue] = useState(task?.due_date ?? '');
   const [remind, setRemind] = useState<number[]>(task?.remind_days ?? DEFAULT_REMIND);
@@ -90,6 +90,14 @@ export function TaskForm({ action, lists, task, from, defaultList, submit = 'Cre
           </select>
         </label>
       </div>
+      {goals.length > 0 && (
+        <label className="field">Meta (opcional)
+          <select className="inp" name="goal" defaultValue={task?.goal_id ?? ''}>
+            <option value="">Ninguna</option>
+            {goals.map((g) => <option key={g.id} value={g.id}>{g.title}</option>)}
+          </select>
+        </label>
+      )}
       <details className="tk-more" open={!!task && (!!task.notes || task.steps.length > 0 || task.repeat !== 'none')}>
         <summary className="link">Más: pasos, notas y repetición</summary>
         <label className="field">Pasos (uno por línea)<textarea name="steps" rows={3} defaultValue={task?.steps.map((x) => (x.done ? '[x] ' : '') + x.t).join('\n')} placeholder={'Buscar fuentes\nEscribir borrador\nRevisar y entregar'} /></label>

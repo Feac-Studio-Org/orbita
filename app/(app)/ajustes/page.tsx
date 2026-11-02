@@ -9,6 +9,10 @@ const TOOLS = [
   ['tasks', 'Tareas', 'Pendientes con fecha límite y recordatorios, organizados en listas.'],
   ['habits', 'Hábitos', 'Hábitos diarios o semanales, solos o en grupo.'],
   ['projects', 'Proyectos', 'Espacios de equipo con tableros, documentos y, si los activas por proyecto, sprints y épicas.'],
+  ['goals', 'Metas', 'Lo que quieres lograr, con fecha y avance, y las tareas y hábitos que la empujan.'],
+  ['notes', 'Notas', 'Apuntes, ideas y listas largas, por carpetas.'],
+  ['journal', 'Diario', 'Unas líneas al día con tu ánimo. Te recuerda a las 9 p. m. si no has escrito.'],
+  ['review', 'Revisión semanal', 'Cada domingo a las 6 p. m.: cómo te fue la semana y qué viene.'],
 ] as const;
 
 const MODS = [

@@ -14,11 +14,13 @@ export default async function Tasks({ searchParams }: { searchParams: Promise<{ 
   const sp = await searchParams;
   const { supabase, user } = await getContext();
   const today = todayISO();
-  const [{ data: listRows }, { data: open }, { data: doneRows }] = await Promise.all([
+  const [{ data: listRows }, { data: open }, { data: doneRows }, { data: goalRows }] = await Promise.all([
     supabase.from('task_lists').select('id, name, color, position').eq('user_id', user.id).order('position'),
     supabase.from('tasks').select('*').eq('user_id', user.id).is('done_at', null).order('due_date', { nullsFirst: false }).order('created_at'),
     supabase.from('tasks').select('*').eq('user_id', user.id).not('done_at', 'is', null).order('done_at', { ascending: false }).limit(60),
+    supabase.from('goals').select('id, title').eq('user_id', user.id).is('done_at', null).order('created_at'),
   ]);
+  const goals = goalRows ?? [];
   const lists = (listRows ?? []) as TaskList[];
   const tasks = (open ?? []) as Task[];
   const done = (doneRows ?? []) as Task[];
@@ -153,7 +155,7 @@ export default async function Tasks({ searchParams }: { searchParams: Promise<{ 
           {(sp.nueva || (!tasks.length && !done.length)) && !selected && (
             <section className="panel">
               <div className="panel-head"><h2>Nueva tarea</h2>{sp.nueva && <Link className="link" href={close}>Cerrar</Link>}</div>
-              <TaskForm action={createTask} lists={lists} from={from} defaultList={list?.id} />
+              <TaskForm action={createTask} lists={lists} goals={goals} from={from} defaultList={list?.id} />
             </section>
           )}
           {selected && (
@@ -166,7 +168,7 @@ export default async function Tasks({ searchParams }: { searchParams: Promise<{ 
               {selected.steps.length > 0 && (
                 <div className="tk-steps">{selected.steps.map((x, i) => <StepCheck key={i} id={selected.id} index={i} done={x.done} text={x.t} />)}</div>
               )}
-              <TaskForm action={updateTask} lists={lists} task={selected} from={from} submit="Guardar cambios">
+              <TaskForm action={updateTask} lists={lists} goals={goals} task={selected} from={from} submit="Guardar cambios">
                 <button className="pill mini danger" type="submit" formAction={deleteTask} formNoValidate>Eliminar</button>
               </TaskForm>
             </section>

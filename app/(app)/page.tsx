@@ -26,6 +26,16 @@ export default async function Home() {
     modules.habits ? supabase.from('habits').select('*').eq('user_id', user.id).is('archived_at', null).order('at_time') : Promise.resolve({ data: [] as never[] }),
     modules.habits ? supabase.from('habit_checks').select('habit_id, day').eq('user_id', user.id).eq('day', today) : Promise.resolve({ data: [] as never[] }),
   ]);
+  const [{ data: goalRows }, { data: goalTasks }, { data: journalToday }] = await Promise.all([
+    modules.goals ? supabase.from('goals').select('id, title, color, measure, current, target, target_date').eq('user_id', user.id).is('done_at', null).order('target_date', { nullsFirst: false }).limit(4) : Promise.resolve({ data: [] as never[] }),
+    modules.goals ? supabase.from('tasks').select('goal_id, done_at').eq('user_id', user.id).not('goal_id', 'is', null) : Promise.resolve({ data: [] as never[] }),
+    modules.journal ? supabase.from('journal').select('id').eq('user_id', user.id).eq('day', today).maybeSingle() : Promise.resolve({ data: null }),
+  ]);
+  const goalPct = (g: { id: string; measure: string; current: number; target: number | null }) => {
+    if (g.measure === 'number') return g.target ? Math.min(100, Math.round((Number(g.current) / Number(g.target)) * 100)) : 0;
+    const its = (goalTasks ?? []).filter((t: { goal_id: string }) => t.goal_id === g.id);
+    return its.length ? Math.round((its.filter((t: { done_at: string | null }) => t.done_at).length / its.length) * 100) : 0;
+  };
   const myTasks = (taskRows ?? []) as Task[];
   const lateTasks = myTasks.filter((t) => t.due_date! < today);
   const habitsToday = ((habitRows ?? []) as Habit[]).filter((h) => isDue(h, today));
@@ -63,6 +73,9 @@ export default async function Home() {
         <div className="stat"><span className="label">Hoy</span><b className="num">{todayBlocks.length}</b><span>bloques en tu horario</span></div>
       </div>
 
+      {modules.journal && !journalToday && hour >= 18 && (
+        <Link href="/diario" className="callout inline" style={{ justifyContent: 'space-between' }}><span>Todavía no has escrito tu diario de hoy.</span><span className="link">Escribir</span></Link>
+      )}
       {(modules.tasks || modules.habits) && (
         <div className="grid g-2">
           {modules.tasks && (
@@ -106,6 +119,15 @@ export default async function Home() {
           {due.length ? <div className="list">{due.map((i) => <IssueRow key={i.key} issue={i} project={projName(i.project_id)} />)}</div> : <p className="muted">Nada con fecha cercana.</p>}
         </section>}
       </div>
+
+      {modules.goals && (goalRows ?? []).length > 0 && (
+        <section className="panel">
+          <div className="panel-head"><h2>Metas</h2><Link className="link" href="/metas">Ver todas</Link></div>
+          <div className="gl-grid">{(goalRows ?? []).map((g: { id: string; title: string; color: string; measure: string; current: number; target: number | null }) => { const p = goalPct(g); return (
+            <Link key={g.id} href={`/metas?m=${g.id}`} className="gl-card" style={{ ['--gc' as string]: g.color }}><b style={{ fontWeight: 500 }}>{g.title}</b><div className="bar"><i style={{ width: Math.max(p, 2) + '%', background: g.color }} /></div><span className="note">{p}%</span></Link>
+          ); })}</div>
+        </section>
+      )}
 
       {modules.projects && <section className="panel">
         <div className="panel-head"><h2>Proyectos</h2><span className="label">{spaces.filter((s) => s.projects.length).map((s) => s.name).join(' · ')}</span></div>

@@ -8,7 +8,7 @@ type NavProject = { key: string; name: string; color: string; logo?: string | nu
 type NavSpace = { id: string; name: string; kind: string; roleLabel: string; isOwner: boolean; portfolio: boolean; members: boolean; projects: NavProject[] };
 type Props = {
   name: string; initial: string; avatarUrl?: string | null; spaces: NavSpace[];
-  modules: { tasks: boolean; habits: boolean; projects: boolean; messages: boolean; finance: boolean; assistant: boolean; calendar: boolean; bases: boolean };
+  modules: { tasks: boolean; habits: boolean; projects: boolean; notes: boolean; goals: boolean; journal: boolean; review: boolean; messages: boolean; finance: boolean; assistant: boolean; calendar: boolean; bases: boolean };
   counts: { tasks: number };
   unread: number;
 };
@@ -68,7 +68,11 @@ export function Sidebar({ name, initial, avatarUrl, spaces, modules, unread, cou
         {item('/notificaciones', 'Notificaciones', 'bell', unread ? <span className="count">{unread}</span> : null)}
         {modules.tasks && item('/tareas', 'Tareas', 'check', counts.tasks ? <span className="count">{counts.tasks}</span> : null)}
         {modules.habits && item('/habitos', 'Hábitos', 'flame', null, path === '/habitos')}
+        {modules.goals && item('/metas', 'Metas', 'flag')}
         {modules.calendar && item('/calendario', 'Calendario', 'cal')}
+        {modules.notes && item('/notas', 'Notas', 'note')}
+        {modules.journal && item('/diario', 'Diario', 'book')}
+        {modules.review && item('/revision', 'Revisión semanal', 'chart')}
         {modules.messages && item('/mensajes', 'Mensajes', 'msg')}
         {modules.finance && item('/finanzas', 'Finanzas', 'money')}
       </nav>

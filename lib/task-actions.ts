@@ -21,7 +21,7 @@ function fields(f: FormData) {
   const priority = ['high', 'medium', 'low'].includes(s(f, 'priority')) ? s(f, 'priority') : 'medium';
   const repeat = ['none', 'daily', 'weekly', 'monthly'].includes(s(f, 'repeat')) ? s(f, 'repeat') : 'none';
   return {
-    title: s(f, 'title').slice(0, 200), notes: s(f, 'notes'), list_id: opt(f, 'list'), priority, repeat,
+    title: s(f, 'title').slice(0, 200), notes: s(f, 'notes'), list_id: opt(f, 'list'), goal_id: f.has('goal') ? opt(f, 'goal') : undefined, priority, repeat,
     due_date: opt(f, 'due'), due_time: opt(f, 'time'),
     remind_days: f.has('remind_set') ? [...new Set(remind)] : undefined,
     remind_time: opt(f, 'remind_time') ?? undefined,

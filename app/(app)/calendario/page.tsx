@@ -8,6 +8,7 @@ import { type Ev, REMIND, REPEAT, bogota, occursOn } from '@/lib/events';
 import { ViewHead } from '@/components/bits';
 import { HabitToggle } from '@/components/habit-toggle';
 import { HabitWizard } from '@/components/habit-wizard';
+import { TaskCheck } from '@/components/task-bits';
 import { type Check, type Habit, isDue } from '@/lib/habits';
 
 export const metadata = { title: 'Calendario' };
@@ -25,14 +26,17 @@ export default async function Calendar({ searchParams }: { searchParams: Promise
   const week = Array.from({ length: 7 }, (_, i) => addDays(monday, i));
   const personal = spaces.find((s) => s.kind === 'personal');
 
-  const [{ data: blocks }, { data: status }, { data: myHabits }, { data: hchecks }, { data: bchecks }, { data: eventsRaw }] = await Promise.all([
+  const [{ data: blocks }, { data: status }, { data: myHabits }, { data: hchecks }, { data: bchecks }, { data: eventsRaw }, { data: taskRows }] = await Promise.all([
     supabase.from('schedule_blocks').select('*').order('start_time'),
     supabase.rpc('google_connection_status'),
     supabase.from('habits').select('*').eq('user_id', user.id).is('archived_at', null).order('at_time'),
     supabase.from('habit_checks').select('habit_id, day, user_id, done_at').gte('day', monday < today ? monday : today),
     supabase.from('block_checks').select('block_id, day').gte('day', monday < today ? monday : today),
     supabase.from('events').select('*').eq('user_id', user.id).order('starts_at'),
+    supabase.from('tasks').select('id, title, due_date, due_time, done_at').eq('user_id', user.id).gte('due_date', monday < today ? monday : today).lte('due_date', addDays(monday, 6)).order('due_time', { nullsFirst: true }),
   ]);
+  // Plazos de tus tareas personales: aparecen en su día, arriba de la columna.
+  const tasksOn = (d: string) => (taskRows ?? []).filter((t) => t.due_date === d);
   const evs = (eventsRaw ?? []) as Ev[];
   const googleReady = googleConfigured();
   const conn = (status as { connected: boolean; google_email: string }[] | null)?.[0];
@@ -127,6 +131,12 @@ export default async function Calendar({ searchParams }: { searchParams: Promise
                   .sort((a, b) => a.t.localeCompare(b.t)).map((x) => x.el)}
               </div>
             ) : <p className="muted">Hoy no tienes bloques ni hábitos.</p>}
+            {tasksOn(today).length > 0 && (
+              <div className="tk-rows" style={{ marginTop: 4 }}>
+                <span className="label">Tareas con plazo hoy</span>
+                {tasksOn(today).map((t) => <div className={'tk-row' + (t.done_at ? ' done' : '')} key={t.id}><TaskCheck id={t.id} done={!!t.done_at} /><Link className="tk-main" href={`/tareas?t=${t.id}`}><b>{t.title}</b></Link><span className="tag warn">{t.due_time ? hhmm(t.due_time) : 'Hoy'}</span></div>)}
+              </div>
+            )}
             <p className="note">Toca cada cosa cuando la cumplas: la clase recibida, el gimnasio, la jornada de trabajo o un hábito.</p>
           </section>
         );
@@ -160,7 +170,7 @@ export default async function Calendar({ searchParams }: { searchParams: Promise
       <div className="cal-wrap">
         <div className="cal">
           <div className="cal-h" />
-          {week.map((d, i) => <div key={d} className={'cal-h' + (d === today ? ' today' : '')}><b>{DAYS[i].slice(0, 3)}</b><span className="num">{label(d)}</span>{days[i].allDay.map((t) => <span key={t} className="tag" style={{ display: 'block', marginTop: 4, overflow: 'hidden', textOverflow: 'ellipsis' }}>{t}</span>)}</div>)}
+          {week.map((d, i) => <div key={d} className={'cal-h' + (d === today ? ' today' : '')}><b>{DAYS[i].slice(0, 3)}</b><span className="num">{label(d)}</span>{days[i].allDay.map((t) => <span key={t} className="tag" style={{ display: 'block', marginTop: 4, overflow: 'hidden', textOverflow: 'ellipsis' }}>{t}</span>)}{tasksOn(d).map((t) => <Link key={t.id} href={`/tareas?t=${t.id}`} className={'tag ' + (t.done_at ? 'ok' : d < today ? 'bad' : 'warn')} style={{ display: 'block', marginTop: 4, overflow: 'hidden', textOverflow: 'ellipsis', textDecoration: t.done_at ? 'line-through' : undefined }} title={`Tarea: ${t.title}`}>{t.due_time ? hhmm(t.due_time) + ' ' : ''}{t.title}</Link>)}</div>)}
           <div className="cal-axis" style={{ height: H }}>{Array.from({ length: 9 }, (_, n) => 6 + n * 2).map((h) => <i key={h} style={{ top: (h - S) * PX }}>{h}:00</i>)}</div>
           {laid.map((items, i) => (
             <div key={week[i]} className="cal-col" style={{ height: H }}>
@@ -183,6 +193,7 @@ export default async function Calendar({ searchParams }: { searchParams: Promise
           <section key={d.date} className="panel" style={{ borderColor: d.date === today ? 'var(--violet)' : undefined }}>
             <div className="panel-head"><h2>{DAYS[i]} {label(d.date)}</h2></div>
             {d.allDay.map((t) => <span key={t} className="tag">{t}</span>)}
+            {tasksOn(d.date).map((t) => <Link key={t.id} href={`/tareas?t=${t.id}`} className={'tag ' + (t.done_at ? 'ok' : d.date < today ? 'bad' : 'warn')}>Tarea · {t.title}</Link>)}
             {d.items.length ? <div className="timeline">{d.items.map((it, n) => <div className="tl-row" key={n}><div className="tl-time num">{it.time}</div><div className="tl-what"><b>{it.title}</b>{it.google && <span className="tag">Google</span>}</div></div>)}</div> : <p className="muted">Libre.</p>}
           </section>
         ))}

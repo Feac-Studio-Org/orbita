@@ -2,7 +2,7 @@ import { cache } from 'react';
 import { requireUser } from './supabase/server';
 
 /** Herramientas que cada persona activa. Tareas, hábitos y proyectos son independientes del tipo de perfil. */
-export type Modules = { tasks: boolean; habits: boolean; projects: boolean; messages: boolean; finance: boolean; assistant: boolean; calendar: boolean; bases: boolean };
+export type Modules = { tasks: boolean; habits: boolean; projects: boolean; notes: boolean; goals: boolean; journal: boolean; review: boolean; messages: boolean; finance: boolean; assistant: boolean; calendar: boolean; bases: boolean };
 export type Features = { sprints?: boolean; epics?: boolean; docs?: boolean };
 export type Space = {
   id: string; name: string; kind: 'personal' | 'team' | 'habits'; description: string;
@@ -30,7 +30,7 @@ export const getContext = cache(async () => {
   const spaces: Space[] = (members ?? [])
     .map((m: any) => ({ ...m.spaces, role: m.role, projects: (projects ?? []).filter((p) => p.space_id === m.spaces.id) }))
     .sort((a: any, b: any) => (a.kind === 'personal' ? -1 : b.kind === 'personal' ? 1 : a.created_at.localeCompare(b.created_at)));
-  const modules: Modules = { tasks: true, habits: true, projects: false, messages: true, finance: false, assistant: false, calendar: true, bases: false, ...(profile?.modules ?? {}) };
+  const modules: Modules = { tasks: true, habits: true, projects: false, notes: true, goals: true, journal: false, review: true, messages: true, finance: false, assistant: false, calendar: true, bases: false, ...(profile?.modules ?? {}) };
   // Quien ya está en un equipo ve sus proyectos aunque no haya activado la herramienta.
   if (spaces.some((s) => s.kind === 'team')) modules.projects = modules.projects || spaces.some((s) => s.kind === 'team' && s.projects.length > 0);
   return { supabase, user, profile, spaces, projects: (projects ?? []) as Project[], modules };

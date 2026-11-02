@@ -863,3 +863,57 @@ details.add[open] > summary { margin-bottom: 12px; }
 @media (max-width: 640px) { .onb-grid { grid-template-columns: minmax(0, 1fr); } }
 
 .stat-row.auto { grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
+
+/* ---------- Notas ---------- */
+.nt-layout { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 16px; align-items: start; }
+.nt-side { display: flex; flex-direction: column; gap: 10px; position: sticky; top: 76px; max-height: calc(100vh - 100px); }
+.nt-list { display: flex; flex-direction: column; gap: 4px; overflow-y: auto; }
+.nt-item { display: grid; gap: 2px; padding: 10px 12px; border-radius: 12px; border: 1px solid transparent; }
+.nt-item:hover { background: var(--ink-3); }
+.nt-item.on { background: var(--ink-3); border-color: var(--line-2); }
+.nt-item b { font-weight: 500; font-size: 14px; display: flex; gap: 6px; align-items: center; overflow-wrap: anywhere; }
+.nt-item span { font-size: 12.5px; color: var(--mute); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nt-main { min-height: 60vh; }
+.nt-editor { display: flex; flex-direction: column; gap: 10px; flex: 1; }
+.nt-bar { display: flex; align-items: center; gap: 12px; }
+.nt-title { flex: 1; min-width: 0; background: none; border: 0; font-size: 24px; font-weight: 500; letter-spacing: -.02em; color: var(--paper); outline: none; }
+.nt-state.error { color: var(--bad); }
+.nt-meta { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; justify-content: space-between; }
+.nt-body { width: 100%; min-height: 52vh; resize: vertical; background: var(--ink-3); border: 1px solid var(--line); border-radius: 12px; padding: 14px; color: var(--paper); font: 14px/1.6 var(--f-mono); }
+.nt-view { min-height: 52vh; }
+@media (max-width: 860px) {
+  .nt-layout { grid-template-columns: minmax(0, 1fr); }
+  .nt-side { position: static; max-height: none; }
+  .nt-list { max-height: 40vh; }
+}
+
+/* ---------- Metas ---------- */
+.gl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+.gl-card { display: flex; flex-direction: column; gap: 10px; padding: 16px; border-radius: 16px; border: 1px solid var(--line); background: var(--ink-2); border-top: 3px solid var(--gc); }
+.gl-card:hover, .gl-card.on { border-color: var(--line-2); border-top-color: var(--gc); background: var(--ink-3); }
+.gl-card.done { opacity: .7; }
+.gl-top { display: flex; justify-content: space-between; gap: 10px; align-items: flex-start; }
+.gl-top b { font-weight: 500; overflow-wrap: anywhere; }
+.gl-detail { border-top: 3px solid var(--gc); }
+.gl-progress { display: flex; align-items: center; gap: 14px; }
+.gl-progress .bar { flex: 1; }
+.gl-progress b { font-size: 22px; font-weight: 500; }
+.bar.big { height: 10px; }
+.gl-h { font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+
+/* ---------- Diario ---------- */
+.jr-mood { display: flex; flex-wrap: wrap; gap: 6px; }
+.jr-mood label { cursor: pointer; }
+.jr-mood input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.jr-mood span { display: inline-block; padding: 7px 14px; border-radius: 99px; border: 1px solid var(--line-2); font-size: 13px; color: var(--mute); }
+.jr-mood input:checked + span { background: color-mix(in srgb, var(--mc) 18%, transparent); border-color: var(--mc); color: var(--paper); }
+.jr-mood input:focus-visible + span { outline: 2px solid var(--violet-hi); }
+.jr-chart { display: grid; grid-template-columns: repeat(30, minmax(0, 1fr)); gap: 3px; height: 90px; align-items: end; }
+.jr-chart a { height: 100%; display: flex; align-items: flex-end; border-radius: 4px; }
+.jr-chart a.on { outline: 1px solid var(--violet-hi); outline-offset: 1px; }
+.jr-chart i { display: block; width: 100%; border-radius: 4px; }
+
+/* ---------- Revisión semanal ---------- */
+.rv-habit { display: grid; grid-template-columns: minmax(0, 1fr) minmax(80px, 2fr) auto; gap: 12px; align-items: center; padding: 6px 0; font-size: 13.5px; }
+.g-3-form { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (max-width: 860px) { .g-3-form { grid-template-columns: minmax(0, 1fr); } }
