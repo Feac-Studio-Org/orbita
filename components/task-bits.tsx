@@ -1,7 +1,7 @@
 'use client';
 import { useOptimistic, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { quickTask, setStepDone, setTaskDone } from '@/lib/task-actions';
+import { deleteList, quickTask, setStepDone, setTaskDone } from '@/lib/task-actions';
 import { DEFAULT_REMIND, REMIND_OPTIONS, TASK_PRIORITY, TASK_REPEAT, type Task, type TaskList } from '@/lib/tasks';
 
 /** Casilla redonda para marcar una tarea; se ve hecha al instante. */
@@ -138,6 +138,16 @@ export function QuickTask() {
         <button className="pill solid mini" type="submit" disabled={pending || !title.trim()}>Agregar</button>
       </div>
       {err && <p className="err">{err}</p>}
+    </form>
+  );
+}
+
+/** Eliminar una lista, preguntando antes. */
+export function DeleteList({ id, name }: { id: string; name: string }) {
+  return (
+    <form action={deleteList} onSubmit={(e) => { if (!confirm(`¿Eliminar la lista "${name}"? Sus tareas no se borran: quedan en "Sin lista".`)) e.preventDefault(); }}>
+      <input type="hidden" name="id" value={id} />
+      <button className="pill mini danger" type="submit">Eliminar lista</button>
     </form>
   );
 }

@@ -1,9 +1,9 @@
 import Link from 'next/link';
 import { getContext } from '@/lib/data';
 import { addDays, fmtDate, isoWeekday, todayISO } from '@/lib/format';
-import { createList, createTask, deleteList, deleteTask, updateList, updateTask } from '@/lib/task-actions';
+import { createList, createTask, deleteTask, updateList, updateTask } from '@/lib/task-actions';
 import { LIST_COLORS, TASK_REPEAT, dueLabel, remindText, type Task, type TaskList } from '@/lib/tasks';
-import { StepCheck, TaskCheck, TaskForm } from '@/components/task-bits';
+import { DeleteList, StepCheck, TaskCheck, TaskForm } from '@/components/task-bits';
 import { ViewHead } from '@/components/bits';
 
 export const metadata = { title: 'Tareas' };
@@ -94,14 +94,13 @@ export default async function Tasks({ searchParams }: { searchParams: Promise<{ 
       <>
         {list && (
           <details className="tk-listedit">
-            <summary className="link">Editar lista</summary>
+            <summary className="link">Cambiar nombre o color</summary>
             <form className="inline" action={updateList}>
               <input type="hidden" name="id" value={list.id} />
               <input className="inp" name="name" defaultValue={list.name} maxLength={60} aria-label="Nombre de la lista" />
               <select className="inp sm" name="color" defaultValue={list.color} aria-label="Color">{LIST_COLORS.map((c, i) => <option key={c} value={c}>Color {i + 1}</option>)}</select>
               <button className="pill mini" type="submit">Guardar</button>
             </form>
-            <form action={deleteList}><input type="hidden" name="id" value={list.id} /><button className="pill mini danger" type="submit">Eliminar lista (las tareas se conservan)</button></form>
           </details>
         )}
         {shown.map((l) => <Group key={l.id} title={l.name} items={tasks.filter((t) => t.list_id === l.id)} />)}
@@ -174,7 +173,7 @@ export default async function Tasks({ searchParams }: { searchParams: Promise<{ 
             </section>
           )}
           <div className="panel tk-panel">
-            {list && <div className="panel-head"><h2><i className="dot" style={{ background: list.color, marginRight: 8 }} />{list.name}</h2></div>}
+            {list && <div className="panel-head"><h2><i className="dot" style={{ background: list.color, marginRight: 8 }} />{list.name}</h2><DeleteList id={list.id} name={list.name} /></div>}
             {body}
           </div>
         </div>
