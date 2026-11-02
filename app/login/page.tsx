@@ -17,9 +17,9 @@ export default async function Login({ searchParams }: { searchParams: Promise<{ 
         <div className="aa-copy">
           <b>Tu vida, tu trabajo y tus equipos, <span className="serif violet">en órbita.</span></b>
           <ul>
-            <li>Proyectos con sprints, tableros y documentación</li>
-            <li>Calendario, finanzas y mensajes con llamadas</li>
-            <li>Tu IA conectada para registrar avances</li>
+            <li>Tareas con plazo que te avisan antes de vencerse</li>
+            <li>Hábitos para seguir solo o con amigos</li>
+            <li>Proyectos en equipo, calendario y mensajes, si los necesitas</li>
           </ul>
         </div>
         <span className="aa-foot">FEAC Estudio · Cali, Colombia</span>

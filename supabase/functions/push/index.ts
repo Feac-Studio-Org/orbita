@@ -34,6 +34,7 @@ function routeFor(link: Record<string, string>) {
   if (link?.channel) return `/canal/${link.channel}`;
   if (link?.path?.startsWith('/habitos/')) return `/h/${link.path.slice(9)}`;
   if (link?.path === '/calendario') return '/calendario';
+  if (link?.path?.startsWith('/tareas')) return link.path;
   return '/notificaciones';
 }
 
