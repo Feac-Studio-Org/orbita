@@ -10,8 +10,7 @@ const TOOLS = [
   ['goals', 'Metas', 'Lo que quieres lograr, con fecha y avance.'],
   ['calendar', 'Calendario', 'Tu horario de la semana, tus eventos y tus plazos, con recordatorios.'],
   ['notes', 'Notas', 'Apuntes e ideas, por carpetas.'],
-  ['journal', 'Diario', 'Unas líneas al día con tu ánimo.'],
-  ['review', 'Revisión semanal', 'Cada domingo: cómo te fue y qué viene.'],
+  ['review', 'Revisión', 'Cuánto cumpliste por día, semana o rango de fechas.'],
   ['finance', 'Finanzas', 'Gastos, suscripciones e ingresos.'],
   ['bases', 'Bases de datos', 'Tablas a tu medida, por ejemplo tus materias.'],
 ] as const;

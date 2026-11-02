@@ -105,24 +105,3 @@ export async function linkGoalHabits(f: FormData) {
   msg(`/metas?m=${id}`, 'ok', 'Hábitos vinculados.');
 }
 
-/* ---------- Diario ---------- */
-export async function saveJournal(f: FormData) {
-  const { supabase, user } = await requireUser();
-  const day = s(f, 'day');
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) msg('/diario', 'error', 'Fecha no válida.');
-  const mood = Number(s(f, 'mood')) || null;
-  const { error } = await supabase.from('journal').upsert({ user_id: user.id, day, mood, body: s(f, 'body'), learned: s(f, 'learned'), grateful: s(f, 'grateful') }, { onConflict: 'user_id,day' });
-  if (error) msg(`/diario?dia=${day}`, 'error', 'No se pudo guardar: ' + error.message);
-  revalidatePath('/diario');
-  msg(`/diario?dia=${day}`, 'ok', 'Guardado.');
-}
-
-/* ---------- Revisión semanal ---------- */
-export async function saveReview(f: FormData) {
-  const { supabase, user } = await requireUser();
-  const week = s(f, 'week');
-  const { error } = await supabase.from('weekly_reviews').upsert({ user_id: user.id, week_start: week, wins: s(f, 'wins'), blockers: s(f, 'blockers'), focus: s(f, 'focus') }, { onConflict: 'user_id,week_start' });
-  if (error) msg(`/revision?semana=${week}`, 'error', 'No se pudo guardar: ' + error.message);
-  revalidatePath('/revision');
-  msg(`/revision?semana=${week}`, 'ok', 'Revisión guardada.');
-}

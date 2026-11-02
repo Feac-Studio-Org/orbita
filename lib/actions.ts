@@ -225,7 +225,7 @@ export async function deleteBlock(f: FormData) {
 }
 
 /* ---------- Ajustes y perfil ---------- */
-const MODULE_KEYS = ['tasks', 'habits', 'projects', 'goals', 'notes', 'journal', 'review', 'messages', 'finance', 'assistant', 'calendar', 'bases'];
+const MODULE_KEYS = ['tasks', 'habits', 'projects', 'goals', 'notes', 'review', 'messages', 'finance', 'assistant', 'calendar', 'bases'];
 
 export async function finishOnboarding(f: FormData) {
   const { supabase, user } = await requireUser();
