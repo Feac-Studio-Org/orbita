@@ -10,7 +10,7 @@ import { ViewHead } from '@/components/bits';
 export const metadata = { title: 'Revisión' };
 
 type T = { id: string; title: string; due_date: string | null; done_at: string | null; goal_id: string | null };
-type Block = { id: string; title: string; weekdays: number[]; starts_on: string | null; ends_on: string | null };
+type Block = { id: string; title: string; weekdays: number[]; starts_on: string | null; ends_on: string | null; start_time: string };
 
 /** Revisión estricta: lo programado contra lo cumplido, en el rango que se elija. */
 export default async function Review({ searchParams }: { searchParams: Promise<{ rango?: string; desde?: string; hasta?: string }> }) {
@@ -26,7 +26,7 @@ export default async function Review({ searchParams }: { searchParams: Promise<{
     supabase.from('tasks').select('id, title, due_date, done_at, goal_id').eq('user_id', user.id).gte('done_at', fromTs).lt('done_at', toTs),
     supabase.from('habits').select('*').eq('user_id', user.id).is('archived_at', null),
     supabase.from('habit_checks').select('habit_id, day').eq('user_id', user.id).gte('day', from).lte('day', to),
-    supabase.from('schedule_blocks').select('id, title, weekdays, starts_on, ends_on'),
+    supabase.from('schedule_blocks').select('id, title, weekdays, starts_on, ends_on, start_time'),
     supabase.from('block_checks').select('block_id, day').eq('user_id', user.id).gte('day', from).lte('day', to),
     modules.goals ? supabase.from('goals').select('id, title, color, measure, current, target, target_date, created_at, done_at').eq('user_id', user.id).is('done_at', null) : Promise.resolve({ data: [] as never[] }),
     modules.goals ? supabase.from('tasks').select('goal_id, done_at').eq('user_id', user.id).not('goal_id', 'is', null) : Promise.resolve({ data: [] as never[] }),
@@ -38,15 +38,15 @@ export default async function Review({ searchParams }: { searchParams: Promise<{
   const hDone = new Set((hc ?? []).map((c) => c.habit_id + c.day));
   const bDone = new Set((bc ?? []).map((c) => c.block_id + c.day));
   const live = (b: Block, d: string) => b.weekdays.includes(isoWeekday(d)) && (!b.ends_on || b.ends_on >= d) && (!b.starts_on || b.starts_on <= d);
-  // Un bloque que empieza a la misma hora que un hábito se cuenta una sola vez (ya se hace así en el calendario); aquí se cuentan por separado solo si no coinciden por nombre.
-  const sameAsHabit = (b: Block) => habits.some((h) => h.title.toLowerCase() === b.title.toLowerCase());
+  // Como en el calendario: un bloque a la misma hora que un hábito de ese día se cuenta una sola vez.
+  const twin = (b: Block, d: string) => habits.some((h) => isDue(h, d) && h.at_time && h.at_time.slice(0, 5) === String(b.start_time).slice(0, 5));
 
   const perDay = days.map((d) => {
     const tDue = dueTasks.filter((t) => t.due_date === d);
     const tOk = tDue.filter((t) => t.done_at && bogotaDay(t.done_at) <= d).length;
     const hDue = habits.filter((h) => isDue(h, d));
     const hOk = hDue.filter((h) => hDone.has(h.id + d)).length;
-    const bDue = blocks.filter((b) => live(b, d) && !sameAsHabit(b));
+    const bDue = blocks.filter((b) => live(b, d) && !twin(b, d));
     const bOk = bDue.filter((b) => bDone.has(b.id + d)).length;
     const total = tDue.length + hDue.length + bDue.length, got = tOk + hOk + bOk;
     return { d, t: [tOk, tDue.length], h: [hOk, hDue.length], b: [bOk, bDue.length], done: finished.filter((t) => bogotaDay(t.done_at!) === d).length, total, got };
