@@ -1078,3 +1078,7 @@ button.ev-btn:hover { filter: brightness(1.18); }
 .ev-x:hover { background: var(--ink-4); color: var(--paper); }
 .ev-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 4px; }
 .nt-rich.viewing { cursor: default; }
+.field input[type="color"] { height: 42px; padding: 4px 6px; cursor: pointer; }
+input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+input[type="color"]::-webkit-color-swatch { border: 0; border-radius: 7px; }
+input[type="color"]::-moz-color-swatch { border: 0; border-radius: 7px; }

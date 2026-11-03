@@ -23,6 +23,8 @@ export function EventDialog({ event, today, save, remove, className, style, titl
 
   const open = () => { setAllDay(!!event?.all_day); setKey((k) => k + 1); ref.current?.showModal(); };
   const submit = (e: React.FormEvent<HTMLFormElement>) => {
+    // La confirmación de "Eliminar" vive en otra ventana, pero su envío sube por aquí: se deja pasar.
+    if (e.target !== e.currentTarget) return;
     e.preventDefault();
     const f = new FormData(e.currentTarget);
     start(async () => { await save(f); });
