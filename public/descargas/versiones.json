@@ -1,5 +1,5 @@
 {
-  "android": { "version": "1.2.0", "build": 5, "url": "https://orbita-feac.vercel.app/descargas/orbita.apk?v=5", "notes": "Actualizaciones desde la app y tareas en la última lista que usaste." },
+  "android": { "version": "1.2.0", "build": 6, "url": "https://orbita-feac.vercel.app/descargas/orbita.apk?v=6", "notes": "Actualizaciones desde la app y tareas en la última lista que usaste." },
   "calendario": { "version": "1.2.0", "build": 5, "url": "https://orbita-feac.vercel.app/descargas/orbita-calendario.apk?v=5", "notes": "Actualizaciones desde la app." },
   "escritorio": { "version": "2.2.0", "notes": "Aviso de actualización dentro de la app: un clic descarga e instala." }
 }
