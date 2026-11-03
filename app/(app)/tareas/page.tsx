@@ -29,7 +29,9 @@ export default async function Tasks({ searchParams }: { searchParams: Promise<{ 
   const selected = sp.t ? [...tasks, ...done].find((t) => t.id === sp.t) : undefined;
   const list = lists.find((l) => l.id === sp.lista);
   const view = list ? 'lista' : VIEWS.some(([v]) => v === sp.vista) ? sp.vista! : 'hoy';
-  const mode = (await cookies()).get('tk_resumen')?.value;
+  const jar = await cookies();
+  const mode = jar.get('tk_resumen')?.value;
+  const lastList = lists.find((l) => l.id === jar.get('tk_lista')?.value)?.id ?? null;
   const from = `/tareas?vista=${view}${list ? `&lista=${list.id}` : ''}`;
   const listOf = (id: string | null) => lists.find((l) => l.id === id);
 
@@ -163,7 +165,7 @@ export default async function Tasks({ searchParams }: { searchParams: Promise<{ 
       {sp.nueva && !selected && (
         <section className="panel">
           <div className="panel-head"><h2>Nueva tarea</h2><Link className="link" href={close}>Cerrar</Link></div>
-          <TaskForm action={createTask} lists={lists} goals={goals} from={from} defaultList={list?.id} />
+          <TaskForm action={createTask} lists={lists} goals={goals} from={from} defaultList={list?.id ?? lastList} />
         </section>
       )}
       {selected && (
@@ -200,7 +202,7 @@ export default async function Tasks({ searchParams }: { searchParams: Promise<{ 
             </div>
           )}
         </div>
-        {view !== 'hechas' && (view !== 'lista' || list || lists.length > 0) && <QuickTask key={list?.id ?? view} list={list?.id ?? null} placeholder={list ? `Agregar a ${list.name}…` : 'Agregar una tarea…'} />}
+        {view !== 'hechas' && (view !== 'lista' || list || lists.length > 0) && <QuickTask key={list?.id ?? view} list={list?.id ?? lastList} lists={lists} fixed={!!list} placeholder={list ? `Agregar a ${list.name}…` : 'Agregar una tarea…'} />}
         {body}
       </section>
     </>

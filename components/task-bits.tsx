@@ -117,9 +117,10 @@ export function TaskForm({ action, lists, goals = [], task, from, defaultList, s
 }
 
 /** Agregar rápido: nombre y, si quieres, en cuántos días. Dentro de una lista, la tarea queda en esa lista. */
-export function QuickTask({ list = null, placeholder = 'Agregar una tarea…' }: { list?: string | null; placeholder?: string }) {
+export function QuickTask({ list: initial = null, lists = [], fixed = false, placeholder = 'Agregar una tarea…' }: { list?: string | null; lists?: TaskList[]; fixed?: boolean; placeholder?: string }) {
   const router = useRouter();
   const [title, setTitle] = useState('');
+  const [list, setList] = useState(initial ?? '');
   const [days, setDays] = useState<number | null>(null);
   const [err, setErr] = useState('');
   const [pending, start] = useTransition();
@@ -127,7 +128,7 @@ export function QuickTask({ list = null, placeholder = 'Agregar una tarea…' }:
     <form className="tk-qadd" onSubmit={(e) => {
       e.preventDefault();
       start(async () => {
-        const r = await quickTask(title, days === null ? null : iso(days), list);
+        const r = await quickTask(title, days === null ? null : iso(days), list || null);
         if ('error' in r && r.error) { setErr(r.error); return; }
         setTitle(''); setDays(null); setErr(''); router.refresh();
       });
@@ -135,6 +136,12 @@ export function QuickTask({ list = null, placeholder = 'Agregar una tarea…' }:
       <input className="inp" value={title} onChange={(e) => setTitle(e.target.value)} placeholder={placeholder} aria-label="Nueva tarea" />
       <div className="tk-quick">
         {QUICK.slice(0, 5).map(([l, n]) => <button type="button" key={l} className={'chip' + (days === n ? ' on' : '')} onClick={() => setDays(days === n ? null : n)}>{l}</button>)}
+        {!fixed && lists.length > 0 && (
+          <select className="inp tk-qlist" value={list} onChange={(e) => setList(e.target.value)} aria-label="Lista">
+            <option value="">Sin lista</option>
+            {lists.map((l) => <option key={l.id} value={l.id}>{l.name}</option>)}
+          </select>
+        )}
         <button className="pill solid mini" type="submit" disabled={pending || !title.trim()}>Agregar</button>
       </div>
       {err && <p className="err">{err}</p>}

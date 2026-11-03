@@ -1,11 +1,16 @@
 'use server';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
+import { cookies } from 'next/headers';
 import { requireUser } from './supabase/server';
 import { LIST_COLORS, type Step } from './tasks';
 
 const s = (f: FormData, k: string) => String(f.get(k) ?? '').trim();
 const opt = (f: FormData, k: string) => s(f, k) || null;
+/** La última lista que usaste queda elegida la próxima vez que crees una tarea. */
+async function rememberList(id: string | null) {
+  (await cookies()).set('tk_lista', id ?? '', { path: '/', maxAge: 60 * 60 * 24 * 365, sameSite: 'lax' });
+}
 const go = (f: FormData, extra: string) => {
   const from = s(f, 'from') || '/tareas';
   redirect(`${from}${from.includes('?') ? '&' : '?'}${extra}`);
@@ -37,6 +42,7 @@ export async function createTask(f: FormData) {
   const row = Object.fromEntries(Object.entries(v).filter(([, x]) => x !== undefined));
   const { error } = await supabase.from('tasks').insert(row);
   if (error) go(f, 'error=' + encodeURIComponent('No se pudo crear: ' + error.message));
+  await rememberList(v.list_id);
   revalidatePath('/', 'layout');
   go(f, 'ok=' + encodeURIComponent(v.due_date ? 'Tarea creada. Te aviso antes del plazo.' : 'Tarea creada.'));
 }
@@ -86,8 +92,9 @@ export async function quickTask(title: string, due: string | null, list: string 
   const { supabase } = await requireUser();
   const t = title.trim().slice(0, 200);
   if (!t) return { error: 'Escribe qué hay que hacer.' };
-  const { error } = await supabase.from('tasks').insert({ title: t, due_date: due && /^\d{4}-\d{2}-\d{2}$/.test(due) ? due : null, list_id: list });
+  const { error } = await supabase.from('tasks').insert({ title: t, due_date: due && /^\d{4}-\d{2}-\d{2}$/.test(due) ? due : null, list_id: list || null });
   if (error) return { error: error.message };
+  await rememberList(list || null);
   revalidatePath('/', 'layout');
   return { success: true };
 }
@@ -99,6 +106,7 @@ export async function createList(f: FormData) {
   const { count } = await supabase.from('task_lists').select('id', { count: 'exact', head: true });
   const { data, error } = await supabase.from('task_lists').insert({ name, color: s(f, 'color') || LIST_COLORS[(count ?? 0) % LIST_COLORS.length], position: (count ?? 0) + 1 }).select('id').single();
   if (error) go(f, 'error=' + encodeURIComponent('No se pudo crear: ' + error.message));
+  await rememberList(data!.id);
   revalidatePath('/', 'layout');
   redirect(`/tareas?vista=lista&lista=${data!.id}`);
 }

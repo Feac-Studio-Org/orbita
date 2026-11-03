@@ -1,10 +1,11 @@
 import Link from 'next/link';
+import { cookies } from 'next/headers';
 import { ProjectMark } from '@/components/project-mark';
 import { getContext } from '@/lib/data';
 import { DAYS, MES, addDays, hhmm, isLate, isoWeekday, todayISO } from '@/lib/format';
 import { IssueRow, Empty } from '@/components/bits';
 import { redirect } from 'next/navigation';
-import { dueLabel, type Task } from '@/lib/tasks';
+import { dueLabel, type Task, type TaskList } from '@/lib/tasks';
 import { QuickTask, TaskCheck } from '@/components/task-bits';
 import { HabitToggle } from '@/components/habit-toggle';
 import { type Habit, isDue } from '@/lib/habits';
@@ -26,6 +27,10 @@ export default async function Home() {
     modules.habits ? supabase.from('habits').select('*').eq('user_id', user.id).is('archived_at', null).order('at_time') : Promise.resolve({ data: [] as never[] }),
     modules.habits ? supabase.from('habit_checks').select('habit_id, day').eq('user_id', user.id).eq('day', today) : Promise.resolve({ data: [] as never[] }),
   ]);
+  const { data: listRows } = modules.tasks ? await supabase.from('task_lists').select('id, name, color, position').eq('user_id', user.id).order('position') : { data: [] };
+  const taskLists = (listRows ?? []) as TaskList[];
+  const savedList = (await cookies()).get('tk_lista')?.value;
+  const lastList = taskLists.find((l) => l.id === savedList)?.id ?? null;
   const [{ data: goalRows }, { data: goalTasks }] = await Promise.all([
     modules.goals ? supabase.from('goals').select('id, title, color, measure, current, target, target_date').eq('user_id', user.id).is('done_at', null).order('target_date', { nullsFirst: false }).limit(4) : Promise.resolve({ data: [] as never[] }),
     modules.goals ? supabase.from('tasks').select('goal_id, done_at').eq('user_id', user.id).not('goal_id', 'is', null) : Promise.resolve({ data: [] as never[] }),
@@ -77,7 +82,7 @@ export default async function Home() {
           {modules.tasks && (
             <section className="panel">
               <div className="panel-head"><h2>Tareas</h2><Link className="link" href="/tareas">Ver todas</Link></div>
-              <QuickTask />
+              <QuickTask lists={taskLists} list={lastList} />
               {myTasks.length ? (
                 <div className="tk-rows">{myTasks.map((t) => { const d = dueLabel(t); return (
                   <div className="tk-row" key={t.id}><TaskCheck id={t.id} done={false} /><Link className="tk-main" href={`/tareas?t=${t.id}`}><b>{t.title}</b></Link><span className={'tag ' + d.tone}>{d.text}</span></div>

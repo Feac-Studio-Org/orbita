@@ -34,9 +34,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             <Icon name="search" size={14} className="" />
             <input name="q" placeholder="Buscar tareas, proyectos y documentos" aria-label="Buscar" />
           </form>
-          <div style={{ flex: 1 }} />
+          <div className="top-spacer" style={{ flex: 1 }} />
           <a href="/notificaciones" className="icon-link" aria-label={`Notificaciones${count ? `: ${count} sin leer` : ''}`}><Icon name="bell" className="" />{!!count && <span className="dot-badge" />}</a>
-          <form action="/auth/salir" method="post"><button className="pill mini" type="submit" title="Cerrar sesión"><Icon name="out" size={14} className="" />Salir</button></form>
+          <form action="/auth/salir" method="post"><button className="pill mini out-btn" type="submit" title="Cerrar sesión" aria-label="Salir"><Icon name="out" size={14} className="" /><span>Salir</span></button></form>
         </header>
         <main className="content">{children}</main>
       </div>
