@@ -1061,3 +1061,20 @@ a.ev:hover { filter: brightness(1.18); }
   .rt-pop-more { left: auto; right: 4px; }
   .nt-rich { min-height: 45vh; }
 }
+
+/* Eventos: se tocan para editarlos en una ventana encima del calendario. */
+button.ev-btn { text-align: left; color: inherit; font: inherit; font-size: 11px; cursor: pointer; display: block; transition: filter .15s; }
+button.ev-btn:hover { filter: brightness(1.18); }
+.ev-link { text-align: left; color: inherit; cursor: pointer; display: grid; gap: 2px; min-width: 0; }
+.ev-link:hover b { color: var(--violet-hi); }
+.ev-new { font-size: 14px; text-align: left; }
+.ev-dialog { margin: auto; padding: 0; border: 1px solid var(--line-2); border-radius: 18px; background: var(--ink-2); color: var(--paper); width: min(520px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); overflow-y: auto; box-shadow: 0 24px 60px rgba(0,0,0,.55); }
+.ev-dialog::backdrop { background: rgba(10, 9, 12, .72); backdrop-filter: blur(3px); }
+.ev-dialog[open] { animation: del-in .22s var(--ease); }
+.ev-box { padding: 20px; gap: 12px; }
+.ev-head { display: flex; align-items: center; justify-content: space-between; }
+.ev-head h3 { font-size: 18px; font-weight: 500; }
+.ev-x { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 9px; color: var(--mute); }
+.ev-x:hover { background: var(--ink-4); color: var(--paper); }
+.ev-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 4px; }
+.nt-rich.viewing { cursor: default; }

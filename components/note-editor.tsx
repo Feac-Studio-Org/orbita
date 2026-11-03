@@ -39,7 +39,7 @@ function Btn({ label, icon, act, active, text }: { label: string; icon?: React.R
   );
 }
 
-/** Nota con formato, como en un procesador de texto. Se guarda sola mientras escribes. */
+/** Nota con formato, como en un procesador de texto. Abre en "Ver" (una vacía, en "Escribir"); se guarda sola mientras escribes. */
 export function NoteEditor({ id, title, body, folder, folders }: { id: string; title: string; body: string; folder: string | null; folders: string[] }) {
   const router = useRouter();
   const ed = useRef<HTMLDivElement>(null);
@@ -49,6 +49,7 @@ export function NoteEditor({ id, title, body, folder, folders }: { id: string; t
   const [pop, setPop] = useState<'' | 'color' | 'align' | 'more'>('');
   const [on, setOn] = useState<Record<string, boolean>>({});
   const [block, setBlock] = useState('p');
+  const [view, setView] = useState(!!body.trim());
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const latest = useRef({ title, folder: folder ?? '', body });
 
@@ -126,7 +127,7 @@ export function NoteEditor({ id, title, body, folder, folders }: { id: string; t
     const li = t.closest('ul.check > li') as HTMLElement | null;
     if (li && e.clientX - li.getBoundingClientRect().left < 28) { e.preventDefault(); li.toggleAttribute('data-done'); changed(); }
     const a = t.closest('a');
-    if (a && (e.ctrlKey || e.metaKey)) window.open(a.href, '_blank', 'noreferrer');
+    if (a && (view || e.ctrlKey || e.metaKey)) { e.preventDefault(); window.open(a.href, '_blank', 'noreferrer'); }
   };
   // Al pegar se conserva el formato básico y se limpia lo demás.
   const onPaste = (e: React.ClipboardEvent) => {
@@ -146,9 +147,13 @@ export function NoteEditor({ id, title, body, folder, folders }: { id: string; t
       <div className="nt-meta">
         <input className="inp sm" list="nt-folders" value={meta.folder} onChange={(e) => setField('folder', e.target.value)} placeholder="Carpeta (opcional)" aria-label="Carpeta" maxLength={60} />
         <datalist id="nt-folders">{folders.map((f) => <option key={f} value={f} />)}</datalist>
+        <nav className="seg" aria-label="Modo">
+          <a href="#" aria-current={view ? 'page' : undefined} onClick={(e) => { e.preventDefault(); setView(true); setPop(''); }}>Ver</a>
+          <a href="#" aria-current={!view ? 'page' : undefined} onClick={(e) => { e.preventDefault(); setView(false); setTimeout(() => ed.current?.focus(), 0); }}>Escribir</a>
+        </nav>
       </div>
 
-      <div className="rt-bar" role="toolbar" aria-label="Formato del texto">
+      {!view && <div className="rt-bar" role="toolbar" aria-label="Formato del texto">
         <div className="rt-group">
           <Btn label="Deshacer (Ctrl+Z)" icon={I.undo} act={() => run('undo')} />
           <Btn label="Rehacer (Ctrl+Y)" icon={I.redo} act={() => run('redo')} />
@@ -206,17 +211,19 @@ export function NoteEditor({ id, title, body, folder, folders }: { id: string; t
             <Btn label="Quitar formato" icon={I.clear} act={() => { setPop(''); clearAll(); }} />
           </div>
         )}
-      </div>
+      </div>}
 
       <div
         ref={ed}
-        className="md nt-rich"
-        contentEditable
+        className={'md nt-rich' + (view ? ' viewing' : '')}
+        contentEditable={!view}
         suppressContentEditableWarning
+        title={view ? 'Doble clic para escribir' : undefined}
+        onDoubleClick={() => { if (view) { setView(false); setTimeout(() => ed.current?.focus(), 0); } }}
         role="textbox"
         aria-multiline="true"
         aria-label="Contenido de la nota"
-        data-placeholder="Escribe aquí…"
+        data-placeholder={view ? 'Nota vacía. Toca Escribir.' : 'Escribe aquí…'}
         onInput={changed}
         onClick={onClick}
         onPaste={onPaste}
