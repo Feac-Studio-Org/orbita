@@ -11,11 +11,12 @@ export const metadata: Metadata = {
   description: 'Proyectos, documentos, calendario y finanzas en un solo lugar. FEAC Estudio.',
   manifest: '/manifest.webmanifest',
   // En iPhone, Órbita se instala desde Safari con "Agregar a pantalla de inicio".
-  appleWebApp: { capable: true, title: 'Órbita', statusBarStyle: 'black-translucent' },
+  appleWebApp: { capable: true, title: 'Órbita', statusBarStyle: 'black' },
   icons: { apple: '/apple-icon.png' },
   robots: { index: false, follow: false },
 };
-export const viewport: Viewport = { themeColor: '#0a090c' };
+// Ancho del celular, sin acercar al tocar un campo; pellizcar para ampliar sigue funcionando en iPhone.
+export const viewport: Viewport = { themeColor: '#0a090c', width: 'device-width', initialScale: 1, maximumScale: 1 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

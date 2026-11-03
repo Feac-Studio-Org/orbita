@@ -1,4 +1,4 @@
-.dl { min-height: 100vh; padding: 0 clamp(20px, 5vw, 80px) 60px; background: radial-gradient(60vw 40vw at 85% 0%, rgba(157, 78, 221, .18), transparent 70%), radial-gradient(50vw 40vw at 0% 80%, rgba(90, 24, 154, .16), transparent 70%), var(--ink); }
+.dl { min-height: 100vh; min-height: 100dvh; padding: 0 clamp(20px, 5vw, 80px) 60px; background: radial-gradient(60vw 40vw at 85% 0%, rgba(157, 78, 221, .18), transparent 70%), radial-gradient(50vw 40vw at 0% 80%, rgba(90, 24, 154, .16), transparent 70%), var(--ink); }
 .dl-nav { display: flex; justify-content: space-between; align-items: center; padding: 20px 0; }
 .dl-brand { display: flex; align-items: center; gap: 10px; font-size: 18px; }
 .dl-brand img { width: 30px; height: 30px; }

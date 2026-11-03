@@ -50,7 +50,7 @@
 @keyframes float { 50% { transform: translate(-50%, calc(-50% - 10px)); } }
 
 
-.lp .system { height: 520vh; position: relative; }
+.lp .system { height: 520vh; height: 520svh; position: relative; }
 .lp .system-pin { position: sticky; top: 0; height: 100svh; display: grid; grid-template-rows: auto 1fr auto; padding: 96px clamp(20px, 5vw, 96px) 40px; overflow: hidden; }
 .lp .system-head { text-align: center; }
 .lp .system-head h2 { margin-bottom: 0; }
