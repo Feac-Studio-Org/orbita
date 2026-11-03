@@ -4,12 +4,12 @@ import { useRouter } from 'next/navigation';
 import { saveNote } from '@/lib/personal-actions';
 import { mdToHtml } from '@/lib/markdown';
 
-/** Editor de una nota: se guarda solo mientras escribes. "Ver" muestra el texto con formato. */
+/** Editor de una nota: se guarda solo mientras escribes. Abre en "Ver" (con formato); una nota vacía abre en "Escribir". */
 export function NoteEditor({ id, title, body, folder, folders }: { id: string; title: string; body: string; folder: string | null; folders: string[] }) {
   const router = useRouter();
   const [v, setV] = useState({ title, body, folder: folder ?? '' });
   const [state, setState] = useState<'saved' | 'dirty' | 'saving' | 'error'>('saved');
-  const [view, setView] = useState(false);
+  const [view, setView] = useState(!!body.trim());
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const first = useRef(true);
 
@@ -36,12 +36,12 @@ export function NoteEditor({ id, title, body, folder, folders }: { id: string; t
         <input className="inp sm" list="nt-folders" value={v.folder} onChange={(e) => setV({ ...v, folder: e.target.value })} placeholder="Carpeta (opcional)" aria-label="Carpeta" maxLength={60} />
         <datalist id="nt-folders">{folders.map((f) => <option key={f} value={f} />)}</datalist>
         <nav className="seg" aria-label="Modo">
-          <a href="#" aria-current={!view ? 'page' : undefined} onClick={(e) => { e.preventDefault(); setView(false); }}>Escribir</a>
           <a href="#" aria-current={view ? 'page' : undefined} onClick={(e) => { e.preventDefault(); setView(true); }}>Ver</a>
+          <a href="#" aria-current={!view ? 'page' : undefined} onClick={(e) => { e.preventDefault(); setView(false); }}>Escribir</a>
         </nav>
       </div>
       {view
-        ? <div className="md nt-view" dangerouslySetInnerHTML={{ __html: mdToHtml(v.body || '_Nota vacía._') }} />
+        ? <div className="md nt-view" title="Doble clic para escribir" onDoubleClick={() => setView(false)} dangerouslySetInnerHTML={{ __html: mdToHtml(v.body || '_Nota vacía._') }} />
         : <textarea className="nt-body" value={v.body} onChange={(e) => setV({ ...v, body: e.target.value })} placeholder={'Escribe aquí.\n\n# Título\n- lista\n**negrita**'} aria-label="Contenido" />}
     </div>
   );
