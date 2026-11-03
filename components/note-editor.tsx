@@ -26,6 +26,7 @@ const I = {
   hr: <path d="M2 8h12M5 4.5h6M5 11.5h6" />,
   clear: <path d="M6 2.5h6.5M9.2 2.5 7.6 10M3 11l4 4M7 11l-4 4" />,
   color: <path d="M4 12 7.2 3.5h1.6L12 12M5.3 9h5.4" />,
+  more: <path d="M3.5 8h.01M8 8h.01M12.5 8h.01" strokeWidth="2.6" />,
 };
 const Ico = ({ d }: { d: React.ReactNode }) => <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{d}</svg>;
 const keep = (e: React.PointerEvent) => e.preventDefault(); // los botones no le quitan el foco al texto (clave en el celular)
@@ -45,7 +46,7 @@ export function NoteEditor({ id, title, body, folder, folders }: { id: string; t
   const range = useRef<Range | null>(null);
   const [meta, setMeta] = useState({ title, folder: folder ?? '' });
   const [state, setState] = useState<'saved' | 'dirty' | 'saving' | 'error'>('saved');
-  const [pop, setPop] = useState<'' | 'color' | 'align'>('');
+  const [pop, setPop] = useState<'' | 'color' | 'align' | 'more'>('');
   const [on, setOn] = useState<Record<string, boolean>>({});
   const [block, setBlock] = useState('p');
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -187,12 +188,24 @@ export function NoteEditor({ id, title, body, folder, folders }: { id: string; t
           <Btn label="Lista numerada" icon={I.ol} act={() => run('insertOrderedList')} active={on.ol} />
           <Btn label="Lista de chequeo" icon={I.check} act={checklist} />
         </div>
-        <div className="rt-group">
+        {/* En el computador se ven siempre; en el celular quedan dentro de "Más" para que la barra quepa en dos filas. */}
+        <div className="rt-group rt-extra">
           <Btn label="Cita" icon={I.quote} act={() => toggleBlock('blockquote')} active={block === 'blockquote'} />
           <Btn label="Enlace" icon={I.link} act={link} />
           <Btn label="Línea divisoria" icon={I.hr} act={() => run('insertHorizontalRule')} />
           <Btn label="Quitar formato" icon={I.clear} act={clearAll} />
         </div>
+        <div className="rt-group rt-more">
+          <Btn label="Más opciones" icon={I.more} act={() => setPop(pop === 'more' ? '' : 'more')} active={pop === 'more'} />
+        </div>
+        {pop === 'more' && (
+          <div className="rt-pop rt-pop-row rt-pop-more" role="dialog" aria-label="Más opciones">
+            <Btn label="Cita" icon={I.quote} act={() => toggleBlock('blockquote')} active={block === 'blockquote'} />
+            <Btn label="Enlace" icon={I.link} act={() => { setPop(''); link(); }} />
+            <Btn label="Línea divisoria" icon={I.hr} act={() => run('insertHorizontalRule')} />
+            <Btn label="Quitar formato" icon={I.clear} act={() => { setPop(''); clearAll(); }} />
+          </div>
+        )}
       </div>
 
       <div
