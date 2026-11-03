@@ -23,3 +23,6 @@
 .dl-foot a { color: var(--violet-hi); }
 @media (max-width: 1000px) { .dl-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 560px) { .dl-grid { grid-template-columns: minmax(0, 1fr); } .dl-hero { padding-top: 40px; } }
+.dl-ios { display: grid; justify-items: center; gap: 10px; max-width: 46ch; color: var(--mute); }
+.dl-ios ol { text-align: left; display: grid; gap: 6px; padding-left: 20px; color: var(--paper); }
+.dl-ios b { font-weight: 500; color: var(--paper); }

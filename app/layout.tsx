@@ -10,6 +10,9 @@ export const metadata: Metadata = {
   title: { default: 'Órbita', template: '%s · Órbita' },
   description: 'Proyectos, documentos, calendario y finanzas en un solo lugar. FEAC Estudio.',
   manifest: '/manifest.webmanifest',
+  // En iPhone, Órbita se instala desde Safari con "Agregar a pantalla de inicio".
+  appleWebApp: { capable: true, title: 'Órbita', statusBarStyle: 'black-translucent' },
+  icons: { apple: '/apple-icon.png' },
   robots: { index: false, follow: false },
 };
 export const viewport: Viewport = { themeColor: '#0a090c' };

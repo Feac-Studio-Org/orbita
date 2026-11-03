@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { existsSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { Detect } from './detect';
 import './descargar.css';
@@ -19,13 +19,20 @@ const FILES = [
     icon: <><path d="M12 3c-2 0-3 1.8-3 4 0 1.5.4 2.4-.6 3.9C7.2 12.6 6 14.6 6 16.5c0 .7.2 1.3.5 1.8M12 3c2 0 3 1.8 3 4 0 1.5-.4 2.4.6 3.9 1.2 1.7 2.4 3.7 2.4 5.6 0 .7-.2 1.3-.5 1.8" /><path d="M7 19.5c1 .9 2.6 1.5 5 1.5s4-.6 5-1.5M10.5 7.5h.01M13.5 7.5h.01M11 10h2" /></> },
   { os: 'android', name: 'Android', file: 'orbita.apk', remote: false, note: 'Android 8 o superior · celular', help: 'Ábrelo desde el celular. Si te lo pide, permite instalar apps de esta fuente.',
     icon: <><rect x="6" y="2.5" width="12" height="19" rx="2.5" /><path d="M10.5 18.5h3" /></> },
+  { os: 'ios', name: 'iPhone', file: '', remote: false, note: 'iOS · desde Safari, sin descargar nada', help: 'En Safari toca Compartir y luego "Agregar a pantalla de inicio". Queda con su ícono, como una app.',
+    icon: <><rect x="6.5" y="2.5" width="11" height="19" rx="3" /><path d="M10.5 5h3" /></> },
   { os: 'calendario', name: 'Órbita Calendario', file: 'orbita-calendario.apk', remote: false, note: 'Android · solo el calendario', help: 'App aparte, liviana. Entras con tu misma cuenta de Órbita y todo queda sincronizado.',
     icon: <><rect x="4" y="5" width="16" height="15" rx="2.5" /><path d="M4 10h16M9 3v4M15 3v4" /></> },
 ];
 
 const SIZES: Record<string, string> = { 'Orbita-Windows-Instalador.exe': '115 MB', 'Orbita-Mac.dmg': '213 MB', 'Orbita-linux-x86_64.AppImage': '126 MB' };
 
+// Versión vigente de cada app: la misma fuente que usan las apps para avisar que hay actualización.
+const VERSIONS = JSON.parse(readFileSync(join(process.cwd(), 'public', 'descargas', 'versiones.json'), 'utf8')) as Record<string, { version: string }>;
+const versionOf = (os: string) => VERSIONS[['windows', 'mac', 'linux'].includes(os) ? 'escritorio' : os]?.version;
+
 function size(file: string) {
+  if (!file) return null;
   if (SIZES[file]) return SIZES[file];
   const p = join(process.cwd(), 'public', 'descargas', file);
   if (!existsSync(p)) return null;
@@ -33,7 +40,7 @@ function size(file: string) {
 }
 
 export default function Download() {
-  const items = FILES.map((f) => ({ ...f, size: size(f.file), href: f.remote ? REL + f.file : `/descargas/${f.file}` }));
+  const items = FILES.map((f) => ({ ...f, size: size(f.file), version: versionOf(f.os), href: f.remote ? REL + f.file : `/descargas/${f.file}` }));
   return (
     <main className="dl">
       <header className="dl-nav"><Link href="/" className="dl-brand"><img src="/logo.png" alt="" /><b>Órbita</b></Link><Link className="dl-btn ghost" href="/login">Entrar en la web</Link></header>
@@ -48,13 +55,14 @@ export default function Download() {
           <article key={i.os} id={i.os} className="dl-card">
             <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" strokeLinecap="round" aria-hidden="true">{i.icon}</svg>
             <h2>{i.name}</h2>
-            <p className="dl-note">{i.note}</p>
-            {i.size ? <a className="dl-btn" href={i.href} download>Descargar · {i.size}</a> : <span className="dl-soon">Nueva versión muy pronto</span>}
+            <p className="dl-note">{i.version ? `Versión ${i.version} · ` : ''}{i.note}</p>
+            {i.os === 'ios' ? <Link className="dl-btn" href="/login">Abrir Órbita</Link>
+              : i.size ? <a className="dl-btn" href={i.href} download>Descargar · {i.size}</a> : <span className="dl-soon">Nueva versión muy pronto</span>}
             <p className="dl-help">{i.help}</p>
           </article>
         ))}
       </section>
-      <p className="dl-foot">¿Prefieres no instalar nada? Órbita funciona completa en el navegador: <Link href="/login">entra en la web</Link>.</p>
+      <p className="dl-foot">Las apps te avisan cuando hay una versión nueva y se actualizan desde adentro, sin volver a esta página.<br />¿Prefieres no instalar nada? Órbita funciona completa en el navegador: <Link href="/login">entra en la web</Link>.</p>
     </main>
   );
 }
