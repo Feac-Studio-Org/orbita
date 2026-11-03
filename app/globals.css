@@ -1011,3 +1011,5 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
   .side { padding-bottom: calc(18px + env(safe-area-inset-bottom)); overscroll-behavior: contain; }
   .content { padding-bottom: calc(48px + env(safe-area-inset-bottom)); }
 }
+a.ev { display: block; color: inherit; cursor: pointer; transition: filter .15s; }
+a.ev:hover { filter: brightness(1.18); }

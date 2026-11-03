@@ -18,7 +18,7 @@ type Item = { id?: string; title: string; start: number; end: number; cls: strin
 const S = 5.5, E = 23, PX = 38;
 const toH = (t: string) => { const [h, m] = t.split(':').map(Number); return h + m / 60; };
 
-export default async function Calendar({ searchParams }: { searchParams: Promise<{ semana?: string; ok?: string; error?: string }> }) {
+export default async function Calendar({ searchParams }: { searchParams: Promise<{ semana?: string; ev?: string; ok?: string; error?: string }> }) {
   const sp = await searchParams;
   const { supabase, spaces, user } = await getContext();
   const today = todayISO();
@@ -39,6 +39,7 @@ export default async function Calendar({ searchParams }: { searchParams: Promise
   // Plazos de tus tareas personales: aparecen en su día, arriba de la columna.
   const tasksOn = (d: string) => (taskRows ?? []).filter((t) => t.due_date === d);
   const evs = (eventsRaw ?? []) as Ev[];
+  const editing = evs.find((e) => e.id === sp.ev);
   const googleReady = googleConfigured();
   const conn = (status as { connected: boolean; google_email: string }[] | null)?.[0];
 
@@ -99,6 +100,25 @@ export default async function Calendar({ searchParams }: { searchParams: Promise
       {sp.error && <p className="err" role="alert">{sp.error}</p>}
       {gError && <p className="err" role="alert">{gError}</p>}
       {sp.ok && <p className="ok-msg" role="status">{sp.ok}</p>}
+
+      {editing && (
+        <section className="panel" id="editar-evento" style={{ borderColor: 'var(--violet)' }}>
+          <div className="panel-head">
+            <h2>Editar evento</h2>
+            <Link className="link" href={`/calendario?semana=${monday}`}>Cerrar</Link>
+          </div>
+          {editing.repeat !== 'none' && <p className="note">Se repite ({REPEAT[editing.repeat].toLowerCase()}): los cambios aplican a todas las fechas.</p>}
+          <form className="form" action={saveEvent}>
+            <input type="hidden" name="id" value={editing.id} />
+            {eventFields(editing, today)}
+            <div className="inline">
+              <button className="pill solid" type="submit">Guardar cambios</button>
+              <Link className="pill" href={`/calendario?semana=${monday}`}>Cancelar</Link>
+              <DeleteButton action={deleteEvent} fields={{ id: editing.id }} what={`el evento «${editing.title}»`} label="Eliminar" />
+            </div>
+          </form>
+        </section>
+      )}
 
       {(() => {
         // Hoy: cada bloque del horario y cada hábito se marca con un toque.
@@ -178,11 +198,12 @@ export default async function Calendar({ searchParams }: { searchParams: Promise
               {Array.from({ length: 17 }, (_, n) => 6 + n).map((g) => <div key={g} className="gl" style={{ top: (g - S) * PX }} />)}
               {items.map((it, n) => {
                 const w = 100 / it.lanes;
-                return (
-                  <div key={n} className={'ev ' + it.cls} title={`${it.title} · ${it.time}`} style={{ top: (it.start - S) * PX, height: Math.max((it.end - it.start) * PX - 3, 18), left: `calc(${it.lane * w}% + 2px)`, width: `calc(${w}% - 4px)`, ...(it.color ? { ['--evc' as string]: it.color } : {}) }}>
-                    <b>{it.title}</b>{(it.end - it.start) * PX > 34 && <span className="num">{it.time}</span>}
-                  </div>
-                );
+                const style = { top: (it.start - S) * PX, height: Math.max((it.end - it.start) * PX - 3, 18), left: `calc(${it.lane * w}% + 2px)`, width: `calc(${w}% - 4px)`, ...(it.color ? { ['--evc' as string]: it.color } : {}) };
+                const inner = <><b>{it.title}</b>{(it.end - it.start) * PX > 34 && <span className="num">{it.time}</span>}</>;
+                // Los eventos propios se abren para editarlos.
+                return it.event
+                  ? <Link key={n} href={`/calendario?semana=${monday}&ev=${it.event.id}#editar-evento`} className={'ev ' + it.cls} title={`${it.title} · ${it.time} · Toca para editar`} style={style}>{inner}</Link>
+                  : <div key={n} className={'ev ' + it.cls} title={`${it.title} · ${it.time}`} style={style}>{inner}</div>;
               })}
             </div>
           ))}
@@ -195,7 +216,7 @@ export default async function Calendar({ searchParams }: { searchParams: Promise
             <div className="panel-head"><h2>{DAYS[i]} {label(d.date)}</h2></div>
             {d.allDay.map((t) => <span key={t} className="tag">{t}</span>)}
             {tasksOn(d.date).map((t) => <Link key={t.id} href={`/tareas?t=${t.id}`} className={'tag ' + (t.done_at ? 'ok' : d.date < today ? 'bad' : 'warn')}>Tarea · {t.title}</Link>)}
-            {d.items.length ? <div className="timeline">{d.items.map((it, n) => <div className="tl-row" key={n}><div className="tl-time num">{it.time}</div><div className="tl-what"><b>{it.title}</b>{it.google && <span className="tag">Google</span>}</div></div>)}</div> : <p className="muted">Libre.</p>}
+            {d.items.length ? <div className="timeline">{d.items.map((it, n) => <div className="tl-row" key={n}><div className="tl-time num">{it.time}</div><div className="tl-what">{it.event ? <Link href={`/calendario?semana=${monday}&ev=${it.event.id}#editar-evento`}><b>{it.title}</b></Link> : <b>{it.title}</b>}{it.google && <span className="tag">Google</span>}</div></div>)}</div> : <p className="muted">Libre.</p>}
           </section>
         ))}
       </div>
@@ -204,15 +225,7 @@ export default async function Calendar({ searchParams }: { searchParams: Promise
         <details className="panel add" open={!evs.length}>
           <summary className="link" style={{ fontSize: 14 }}>+ Nuevo evento</summary>
           <form className="form" action={saveEvent}>
-            <label className="field">Título<input name="title" required maxLength={120} placeholder="Ej.: Reunión con el cliente" /></label>
-            <div className="two"><label className="field">Fecha<input type="date" name="date" required defaultValue={today} /></label><label className="check" style={{ alignSelf: 'end' }}><input type="checkbox" name="all_day" />Todo el día</label></div>
-            <div className="two"><label className="field">Desde<input type="time" name="start" defaultValue="09:00" /></label><label className="field">Hasta<input type="time" name="end" defaultValue="10:00" /></label></div>
-            <div className="two">
-              <label className="field">Repetir<select name="repeat">{Object.entries(REPEAT).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></label>
-              <label className="field">Aviso<select name="remind" defaultValue="10">{REMIND.map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></label>
-            </div>
-            <div className="two"><label className="field">Lugar<input name="location" /></label><label className="field">Color<input type="color" name="color" defaultValue="#c77dff" /></label></div>
-            <label className="field">Notas<input name="notes" /></label>
+            {eventFields(null, today)}
             <button className="pill solid" type="submit" style={{ alignSelf: 'flex-start' }}>Guardar evento</button>
           </form>
         </details>
@@ -223,8 +236,11 @@ export default async function Calendar({ searchParams }: { searchParams: Promise
               {evs.map((e) => (
                 <div key={e.id} className="row" style={{ gridTemplateColumns: '10px minmax(0,1fr) auto' }}>
                   <i style={{ width: 10, height: 10, borderRadius: 3, background: e.color }} />
-                  <div className="t"><b>{e.title}</b><span>{bogota(e.starts_at).date}{e.all_day ? ' · todo el día' : ` · ${hhmm(bogota(e.starts_at).time)}`} · {REPEAT[e.repeat]}</span></div>
+                  <Link className="t" href={`/calendario?semana=${bogota(e.starts_at).date}&ev=${e.id}#editar-evento`}><b>{e.title}</b><span>{bogota(e.starts_at).date}{e.all_day ? ' · todo el día' : ` · ${hhmm(bogota(e.starts_at).time)}`} · {REPEAT[e.repeat]}</span></Link>
+                  <div className="inline" style={{ gap: 6 }}>
+                    <Link className="pill mini" href={`/calendario?semana=${bogota(e.starts_at).date}&ev=${e.id}#editar-evento`}>Editar</Link>
                   <DeleteButton action={deleteEvent} fields={{ id: e.id }} what={`el evento «${e.title}»`} />
+                  </div>
                 </div>
               ))}
             </div>
@@ -262,6 +278,24 @@ export default async function Calendar({ searchParams }: { searchParams: Promise
           </div>
         </details>
       </div>
+    </>
+  );
+}
+
+/** Campos del evento, vacíos para uno nuevo o con sus datos para editarlo. */
+function eventFields(e: Ev | null, today: string) {
+  const st = e ? bogota(e.starts_at) : null, en = e ? bogota(e.ends_at) : null;
+  return (
+    <>
+      <label className="field">Título<input name="title" required maxLength={120} placeholder="Ej.: Reunión con el cliente" defaultValue={e?.title} /></label>
+      <div className="two"><label className="field">Fecha<input type="date" name="date" required defaultValue={st?.date ?? today} /></label><label className="check" style={{ alignSelf: 'end' }}><input type="checkbox" name="all_day" defaultChecked={e?.all_day} />Todo el día</label></div>
+      <div className="two"><label className="field">Desde<input type="time" name="start" defaultValue={e && !e.all_day ? st!.time : '09:00'} /></label><label className="field">Hasta<input type="time" name="end" defaultValue={e && !e.all_day ? en!.time : '10:00'} /></label></div>
+      <div className="two">
+        <label className="field">Repetir<select name="repeat" defaultValue={e?.repeat ?? 'none'}>{Object.entries(REPEAT).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></label>
+        <label className="field">Aviso<select name="remind" defaultValue={e ? (e.remind_min === null ? '' : String(e.remind_min)) : '10'}>{REMIND.map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></label>
+      </div>
+      <div className="two"><label className="field">Lugar<input name="location" defaultValue={e?.location} /></label><label className="field">Color<input type="color" name="color" defaultValue={e?.color ?? '#c77dff'} /></label></div>
+      <label className="field">Notas<input name="notes" defaultValue={e?.notes} /></label>
     </>
   );
 }
