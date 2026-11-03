@@ -25,7 +25,7 @@ const FILES = [
     icon: <><rect x="4" y="5" width="16" height="15" rx="2.5" /><path d="M4 10h16M9 3v4M15 3v4" /></> },
 ];
 
-const SIZES: Record<string, string> = { 'Orbita-Windows-Instalador.exe': '115 MB', 'Orbita-Mac.dmg': '213 MB', 'Orbita-linux-x86_64.AppImage': '126 MB' };
+const SIZES: Record<string, string> = { 'Orbita-Windows-Instalador.exe': '121 MB', 'Orbita-Mac.dmg': '224 MB', 'Orbita-linux-x86_64.AppImage': '126 MB' };
 
 // Versión vigente de cada app: la misma fuente que usan las apps para avisar que hay actualización.
 const VERSIONS = JSON.parse(readFileSync(join(process.cwd(), 'public', 'descargas', 'versiones.json'), 'utf8')) as Record<string, { version: string }>;
