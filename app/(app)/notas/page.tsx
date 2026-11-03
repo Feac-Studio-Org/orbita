@@ -5,6 +5,7 @@ import { createNote, deleteNote, pinNote } from '@/lib/personal-actions';
 import { NoteEditor } from '@/components/note-editor';
 import { ViewHead } from '@/components/bits';
 import { DeleteButton } from '@/components/delete-button';
+import { noteText } from '@/lib/rich';
 
 export const metadata = { title: 'Notas' };
 
@@ -17,14 +18,14 @@ export default async function Notes({ searchParams }: { searchParams: Promise<{ 
   const all = (data ?? []) as Note[];
   const folders = [...new Set(all.map((n) => n.folder).filter(Boolean) as string[])].sort((a, b) => a.localeCompare(b, 'es'));
   const q = (sp.q ?? '').toLowerCase();
-  const shown = all.filter((n) => (!sp.carpeta || n.folder === sp.carpeta) && (!q || n.title.toLowerCase().includes(q) || n.body.toLowerCase().includes(q)));
+  const shown = all.filter((n) => (!sp.carpeta || n.folder === sp.carpeta) && (!q || n.title.toLowerCase().includes(q) || noteText(n.body).toLowerCase().includes(q)));
   const sel = all.find((n) => n.id === sp.n);
   const qs = (extra: Record<string, string | undefined>) => '/notas?' + new URLSearchParams(Object.entries({ carpeta: sp.carpeta, q: sp.q, ...extra }).filter(([, v]) => v) as [string, string][]).toString();
-  const preview = (b: string) => b.replace(/[#*`>\-|]/g, '').replace(/\s+/g, ' ').trim().slice(0, 90);
+  const preview = (b: string) => noteText(b).slice(0, 90);
 
   return (
     <>
-      <ViewHead label="Solo tú las ves" title="Notas" text="Apuntes, ideas y listas largas. Se guardan solas mientras escribes.">
+      <ViewHead label="Solo tú las ves" title="Notas" text="Apuntes, ideas y listas con formato: negritas, colores, títulos y más. Se guardan solas mientras escribes.">
         <form action={createNote}><input type="hidden" name="folder" value={sp.carpeta ?? ''} /><button className="pill solid" type="submit"><span className="pill__dot" />Nueva nota</button></form>
       </ViewHead>
       {sp.ok && <p className="ok-msg" role="status">{sp.ok}</p>}
