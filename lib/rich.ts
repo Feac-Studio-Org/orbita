@@ -1,7 +1,24 @@
 import { mdToHtml } from './markdown';
 
-/** Las notas nuevas se guardan como HTML; las viejas, en Markdown. */
-export const isHtml = (body: string) => /^\s*</.test(body);
+const TAG = /<\/?(p|div|br|b|strong|i|em|u|s|strike|span|h[2-4]|ul|ol|li|blockquote|a|hr|code|pre|table)(\s[^>]*)?\/?>/i;
+
+/** Las notas nuevas se guardan como HTML; las viejas, en Markdown. Una nota con formato puede empezar con texto suelto. */
+export const isHtml = (body: string) => /^\s*</.test(body) || TAG.test(body);
+
+const BLOCK = new Set(['P', 'DIV', 'H2', 'H3', 'H4', 'UL', 'OL', 'BLOCKQUOTE', 'HR', 'PRE', 'TABLE']);
+
+/** Mete en un párrafo el texto suelto del inicio (la primera línea que se escribe queda sin etiqueta). En el navegador. */
+export function wrapStart(html: string): string {
+  const root = new DOMParser().parseFromString(`<div>${html}</div>`, 'text/html').body.firstElementChild!;
+  if (!root.textContent?.trim()) return html;
+  const lead: ChildNode[] = [];
+  for (const n of root.childNodes) { if (n instanceof Element && BLOCK.has(n.tagName)) break; lead.push(n); }
+  if (!lead.length) return html;
+  const p = root.ownerDocument.createElement('p');
+  root.insertBefore(p, lead[0]);
+  p.append(...lead);
+  return root.innerHTML;
+}
 
 /** Contenido de una nota listo para el editor: HTML tal cual o Markdown convertido. */
 export const noteHtml = (body: string) => (isHtml(body) ? body : body.trim() ? mdToHtml(body, 1) : '');

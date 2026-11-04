@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { saveNote } from '@/lib/personal-actions';
-import { noteHtml, sanitize } from '@/lib/rich';
+import { noteHtml, sanitize, wrapStart } from '@/lib/rich';
 
 const TEXT_COLORS: [string, string][] = [['Normal', ''], ['Violeta', '#c77dff'], ['Rojo', '#ec6f86'], ['Naranja', '#f0a35e'], ['Amarillo', '#e6c86e'], ['Verde', '#4cc38a'], ['Azul', '#6ea8fe'], ['Gris', '#9a95a3']];
 const MARKS: [string, string][] = [['Sin resaltar', ''], ['Violeta', 'rgba(157, 78, 221, .35)'], ['Rojo', 'rgba(236, 111, 134, .3)'], ['Amarillo', 'rgba(230, 200, 110, .3)'], ['Verde', 'rgba(76, 195, 138, .3)'], ['Azul', 'rgba(110, 168, 254, .3)']];
@@ -74,7 +74,7 @@ export function NoteEditor({ id, title, body, folder, folders }: { id: string; t
   };
   useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
 
-  const changed = () => { if (ed.current) { latest.current.body = ed.current.innerHTML; save(); } };
+  const changed = () => { if (ed.current) { latest.current.body = wrapStart(ed.current.innerHTML); save(); } };
   const setField = (k: 'title' | 'folder', v: string) => { setMeta((m) => ({ ...m, [k]: v })); latest.current[k] = v; save(); };
 
   // Recordar dónde está el cursor y qué formato tiene, para que los botones actúen ahí y se vean activos.
