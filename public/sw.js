@@ -68,3 +68,24 @@ self.addEventListener('message', (e) => {
   if (e.data?.tipo === 'borrar') e.waitUntil(caches.delete(PAGINAS));
   if (e.data?.tipo === 'guardar') e.waitUntil(Promise.allSettled(e.data.urls.map((u) => guardarPagina(new URL(u, self.location.origin).href))));
 });
+
+// Avisos: Firebase entrega el mensaje y aquí se muestra.
+self.addEventListener('push', (e) => {
+  let m = {};
+  try { m = e.data?.json() ?? {}; } catch {}
+  const n = m.notification ?? {};
+  e.waitUntil(self.registration.showNotification(n.title || 'Órbita', { body: n.body || '', icon: '/icon-192.png', data: m.data ?? {} }));
+});
+
+// Las rutas de los avisos son las de la app; algunas cambian en la web.
+const rutaWeb = (r = '/notificaciones') => r.startsWith('/h/') ? '/habitos/' + r.slice(3) : r.startsWith('/canal/') ? '/mensajes' : r;
+
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  const url = rutaWeb(e.notification.data?.route);
+  e.waitUntil((async () => {
+    const abiertas = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    if (abiertas[0]) { await abiertas[0].focus(); return abiertas[0].navigate(url); }
+    return self.clients.openWindow(url);
+  })());
+});

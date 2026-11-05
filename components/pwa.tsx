@@ -15,6 +15,8 @@ export function Pwa() {
       const sw = (await navigator.serviceWorker.ready).active;
       if (path === '/login' || path === '/bienvenida') {
         sw?.postMessage({ tipo: 'borrar' });
+        // Sin sesión, este dispositivo deja de recibir los avisos de esa cuenta.
+        (await navigator.serviceWorker.ready).pushManager?.getSubscription().then((s) => s?.unsubscribe()).catch(() => {});
         try { localStorage.removeItem('orbita-guardado'); } catch {}
         return;
       }
