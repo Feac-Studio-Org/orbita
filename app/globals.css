@@ -1082,3 +1082,28 @@ button.ev-btn:hover { filter: brightness(1.18); }
 input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
 input[type="color"]::-webkit-color-swatch { border: 0; border-radius: 7px; }
 input[type="color"]::-moz-color-swatch { border: 0; border-radius: 7px; }
+
+/* ---------- Celular como la app ---------- */
+.side-scrim, .tabbar, .top-title, .search-link, .side-out { display: none; }
+.offline-bar { padding: 8px 16px; background: var(--ink-3); border-bottom: 1px solid var(--line-2); color: var(--paper); font-size: 12.5px; text-align: center; }
+@media (max-width: 860px) {
+  .side { padding-bottom: calc(16px + env(safe-area-inset-bottom)); }
+  .side-out { display: block; }
+  .side-scrim { display: block; position: fixed; inset: 0; z-index: 55; background: rgba(0, 0, 0, .55); opacity: 0; pointer-events: none; transition: opacity .2s var(--ease); }
+  .side-scrim.open { opacity: 1; pointer-events: auto; }
+  .top { padding-top: calc(10px + env(safe-area-inset-top)); }
+  .top .search-box, .top .out-btn, .top form:has(.out-btn) { display: none; }
+  .top-title { display: block; flex: 1; min-width: 0; font-size: 16px; font-weight: 600; letter-spacing: -.01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .search-link { display: grid; }
+  .menu-btn, .top .icon-link { border-color: transparent; }
+  .content { padding-bottom: calc(144px + env(safe-area-inset-bottom)); }
+  .tabbar { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); position: fixed; z-index: 50; left: 0; right: 0; bottom: 0; padding: 6px 4px calc(6px + env(safe-area-inset-bottom)); background: var(--ink-2); border-top: 1px solid var(--line); }
+  .tb-item { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 2px 0; font-size: 11.5px; color: var(--mute); -webkit-tap-highlight-color: transparent; }
+  .tb-ico { display: grid; place-items: center; width: 56px; height: 30px; border-radius: 99px; transition: background .15s var(--ease); }
+  .tb-item[aria-current='page'] { color: var(--paper); }
+  .tb-item[aria-current='page'] .tb-ico { background: var(--violet-wash); color: var(--violet-hi); }
+  .view-head[data-repetido] h1, .view-head[data-repetido] p, .view-head[data-repetido] .label { display: none; }
+  .view-head > .pill.solid { position: fixed; z-index: 45; right: 16px; bottom: calc(78px + env(safe-area-inset-bottom)); padding: 13px 18px; font-size: 14px; box-shadow: 0 10px 28px rgba(0, 0, 0, .5); }
+}
+.search-page { display: none; }
+@media (max-width: 860px) { .search-page { display: flex; width: 100%; } }

@@ -1,5 +1,6 @@
 import { Suspense } from 'react';
-import { Sidebar } from '@/components/nav';
+import { Sidebar, TabBar, TopTitle } from '@/components/nav';
+import { AvisoSinConexion } from '@/components/pwa';
 import { Icon } from '@/components/icons';
 import { getContext } from '@/lib/data';
 import { ROLE, initial, todayISO } from '@/lib/format';
@@ -29,17 +30,21 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       </Suspense>
       <div className="main">
         <header className="top">
-          <button className="menu-btn" id="menuBtn" aria-label="Abrir navegación"><Icon name="menu" className="" /></button>
+          <button className="menu-btn" id="menuBtn" aria-label="Abrir navegación" aria-controls="side" aria-expanded="false"><Icon name="menu" className="" /></button>
+          <TopTitle />
           <form action="/buscar" className="search-box" role="search">
             <Icon name="search" size={14} className="" />
             <input name="q" placeholder="Buscar tareas, proyectos y documentos" aria-label="Buscar" />
           </form>
           <div className="top-spacer" style={{ flex: 1 }} />
+          <a href="/buscar" className="icon-link search-link" aria-label="Buscar"><Icon name="search" className="" /></a>
           <a href="/notificaciones" className="icon-link" aria-label={`Notificaciones${count ? `: ${count} sin leer` : ''}`}><Icon name="bell" className="" />{!!count && <span className="dot-badge" />}</a>
           <form action="/auth/salir" method="post"><button className="pill mini out-btn" type="submit" title="Cerrar sesión" aria-label="Salir"><Icon name="out" size={14} className="" /><span>Salir</span></button></form>
         </header>
+        <AvisoSinConexion />
         <main className="content">{children}</main>
       </div>
+      <TabBar modules={modules} />
     </div>
   );
 }

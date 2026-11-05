@@ -83,7 +83,7 @@ export function EventDialog({ event, today, save, remove, className, style, titl
 export function LiveRefresh({ every = 20000 }: { every?: number }) {
   const router = useRouter();
   useEffect(() => {
-    const tick = () => { if (document.visibilityState === 'visible' && !document.querySelector('dialog[open]')) router.refresh(); };
+    const tick = () => { if (navigator.onLine && document.visibilityState === 'visible' && !document.querySelector('dialog[open]')) router.refresh(); };
     const t = setInterval(tick, every);
     document.addEventListener('visibilitychange', tick);
     window.addEventListener('focus', tick);

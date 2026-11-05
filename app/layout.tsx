@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter_Tight, Instrument_Serif, JetBrains_Mono } from 'next/font/google';
+import { Pwa } from '@/components/pwa';
 import './globals.css';
 
 const sans = Inter_Tight({ subsets: ['latin'], variable: '--font-sans', display: 'swap' });
@@ -21,7 +22,7 @@ export const viewport: Viewport = { themeColor: '#0a090c', width: 'device-width'
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="es" className={`${sans.variable} ${serif.variable} ${mono.variable}`}>
-      <body>{children}</body>
+      <body>{children}<Pwa /></body>
     </html>
   );
 }

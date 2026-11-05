@@ -93,11 +93,12 @@ export default async function Goals({ searchParams }: { searchParams: Promise<{ 
               {sel.measure === 'number' ? `${fmtN(sel.current)} de ${fmtN(sel.target ?? 0)} ${sel.unit}` : `${its.filter((t) => t.done_at).length} de ${its.length} tareas hechas`}
               {sel.target_date ? ` · ${left !== null && left < 0 && !sel.done_at ? `venció hace ${-left} días` : `para el ${fmtDate(sel.target_date)}${left !== null && !sel.done_at ? ` (faltan ${left} días)` : ''}`}` : ''}
             </p>
-            {sel.measure === 'number' && !sel.done_at && (
+            {sel.measure === 'number' && (
               <form className="inline" action={setGoalProgress}>
                 <input type="hidden" name="id" value={sel.id} />
-                <input className="inp" name="add" inputMode="decimal" placeholder={`Sumar ${sel.unit || 'avance'}`} aria-label="Cuánto sumar" />
-                <button className="pill mini" type="submit">Sumar</button>
+                <input className="inp" name="add" inputMode="decimal" required placeholder={`Cantidad en ${sel.unit || 'avance'}`} aria-label="Cantidad" />
+                {!sel.done_at && <button className="pill mini" type="submit" name="modo" value="sumar">Sumar</button>}
+                <button className="pill mini" type="submit" name="modo" value="sacar">Sacar</button>
               </form>
             )}
             <div className="grid g-2">

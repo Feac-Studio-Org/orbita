@@ -26,9 +26,12 @@ export function Sidebar({ name, initial, avatarUrl, spaces, modules, unread, cou
   useEffect(() => {
     const btn = document.getElementById('menuBtn');
     const toggle = () => setOpen((o) => !o);
+    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
     btn?.addEventListener('click', toggle);
-    return () => btn?.removeEventListener('click', toggle);
+    window.addEventListener('keydown', esc);
+    return () => { btn?.removeEventListener('click', toggle); window.removeEventListener('keydown', esc); };
   }, []);
+  useEffect(() => { document.getElementById('menuBtn')?.setAttribute('aria-expanded', String(open)); }, [open]);
 
   function toggleSpace(id: string, isOpen: boolean) {
     const next = { ...closed, [id]: !isOpen };
@@ -57,7 +60,10 @@ export function Sidebar({ name, initial, avatarUrl, spaces, modules, unread, cou
   };
 
   return (
-    <aside className={'side' + (open ? ' open' : '')} id="side" aria-label="Navegación">
+    <>
+    <div className={'side-scrim' + (open ? ' open' : '')} onClick={() => setOpen(false)} aria-hidden="true" />
+    {/* Tocar cualquier enlace cierra el menú, también el de la sección donde ya estás. */}
+    <aside className={'side' + (open ? ' open' : '')} id="side" aria-label="Navegación" onClick={(e) => { if ((e.target as HTMLElement).closest('a')) setOpen(false); }}>
       <Link href="/" className="brand"><img src="/logo.png" alt="" /><b>Órbita</b></Link>
       <Link href="/perfil" className="me">
         {avatarUrl ? <img src={avatarUrl} alt="" style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover', flex: 'none' }} /> : <span className="avatar">{initial}</span>}
@@ -112,7 +118,51 @@ export function Sidebar({ name, initial, avatarUrl, spaces, modules, unread, cou
         {(modules.projects || modules.habits) && item('/nuevo/espacio', modules.projects ? 'Crear un espacio' : 'Crear grupo de hábitos', 'plus')}
         {modules.assistant && item('/asistente', 'Asistente', 'plug', <span className="key">MCP</span>)}
         {item('/ajustes', 'Ajustes', 'gear')}
+        <form action="/auth/salir" method="post" className="side-out"><button className="nav-item" type="submit" style={{ width: '100%' }}><Icon name="out" /><span className="nl">Cerrar sesión</span></button></form>
       </nav>
     </aside>
+    </>
+  );
+}
+
+const TITULOS: [string, string][] = [
+  ['/tareas', 'Tareas'], ['/habitos', 'Hábitos'], ['/proyectos', 'Proyectos'], ['/metas', 'Metas'], ['/calendario', 'Calendario'], ['/notas', 'Notas'],
+  ['/revision', 'Revisión'], ['/mensajes', 'Mensajes'], ['/finanzas', 'Finanzas'], ['/notificaciones', 'Notificaciones'], ['/ajustes', 'Ajustes'],
+  ['/perfil', 'Perfil'], ['/asistente', 'Asistente'], ['/buscar', 'Buscar'], ['/personal', 'Bases de datos'], ['/portafolio', 'Portafolio'], ['/miembros', 'Miembros'], ['/p/', 'Proyecto'], ['/t/', 'Tarea'],
+];
+
+/** Título del encabezado en el celular, como en la app. */
+export function TopTitle() {
+  const path = usePathname();
+  const t = path === '/' ? 'Hoy' : TITULOS.find(([p]) => path.startsWith(p))?.[1] ?? 'Órbita';
+  // Si la página repite este título en grande, en el celular se esconde (la app solo lo muestra arriba).
+  useEffect(() => {
+    const head = document.querySelector('.view-head');
+    if (head?.querySelector('h1')?.textContent?.trim() === t) head.setAttribute('data-repetido', '');
+  }, [path, t]);
+  return <b className="top-title">{t}</b>;
+}
+
+type Tab = { href: string; label: string; ico: IconName };
+
+/** Barra inferior del celular: las mismas pestañas de la app, según las herramientas activas. */
+export function TabBar({ modules }: { modules: Props['modules'] }) {
+  const path = usePathname();
+  const posibles: (Tab | false)[] = [
+    { href: '/', label: 'Hoy', ico: 'home' },
+    modules.tasks && { href: '/tareas', label: 'Tareas', ico: 'check' },
+    modules.habits && { href: '/habitos', label: 'Hábitos', ico: 'flame' },
+    modules.projects && { href: '/proyectos', label: 'Proyectos', ico: 'layers' },
+    modules.messages && { href: '/mensajes', label: 'Mensajes', ico: 'msg' },
+  ];
+  const tabs = posibles.filter((t): t is Tab => !!t);
+  if (tabs.length < 5) tabs.push({ href: '/perfil', label: 'Perfil', ico: 'people' });
+  return (
+    <nav className="tabbar" aria-label="Secciones">
+      {tabs.map((t) => {
+        const on = t.href === '/' ? path === '/' : path === t.href || path.startsWith(t.href + '/') || (t.href === '/proyectos' && path.startsWith('/p/'));
+        return <Link key={t.href} href={t.href} className="tb-item" aria-current={on ? 'page' : undefined}><span className="tb-ico"><Icon name={t.ico} size={20} className="" /></span>{t.label}</Link>;
+      })}
+    </nav>
   );
 }

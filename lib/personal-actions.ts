@@ -66,13 +66,16 @@ export async function updateGoal(f: FormData) {
   msg(`/metas?m=${id}`, 'ok', 'Meta guardada.');
 }
 
-/** Sumar o fijar el avance de una meta numérica. */
+/** Sumar, sacar o fijar el avance de una meta numérica. */
 export async function setGoalProgress(f: FormData) {
   const { supabase } = await requireUser();
   const id = s(f, 'id');
   const { data: g } = await supabase.from('goals').select('current, target').eq('id', id).single();
   const add = num(f, 'add'), set = num(f, 'set');
-  const current = set ?? Number(g?.current ?? 0) + (add ?? 0);
+  const hay = Number(g?.current ?? 0);
+  if (set === null && (add === null || add <= 0)) msg(`/metas?m=${id}`, 'error', 'Escribe una cantidad mayor que cero.');
+  if (s(f, 'modo') === 'sacar' && add! > hay) msg(`/metas?m=${id}`, 'error', 'No puedes sacar más de lo que llevas.');
+  const current = set ?? (s(f, 'modo') === 'sacar' ? hay - add! : hay + add!);
   await supabase.from('goals').update({ current, done_at: g?.target && current >= Number(g.target) ? new Date().toISOString() : null }).eq('id', id);
   revalidatePath('/', 'layout');
   redirect(`/metas?m=${id}`);
